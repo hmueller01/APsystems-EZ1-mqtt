@@ -11,7 +11,7 @@ This component is a Python package to gateway [APsystems](https://apsystems.com/
 This work is based on [aps2mqtt (v1.2.0)](https://github.com/fligneul/aps2mqtt). Thanks for your work [Florian L.](https://github.com/fligneul)!
 
 ## Basic Requirements
-* Python (details see [pyproject.toml](https://github.com/hmueller01/APsystems-EZ1-mqtt/pyproject.toml))
+* Python (details see [pyproject.toml](pyproject.toml))
 * MQTT broker (e.g. [Eclipse Mosquitto](https://github.com/eclipse/mosquitto))
 * [APsystems EZ1 inverter](https://emea.apsystems.com/diy/)
 
