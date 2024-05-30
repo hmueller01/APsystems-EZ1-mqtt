@@ -3,15 +3,15 @@
 
 # APsystems EZ1 MQTT gateway
 
-This component is a Python module to gateway [APsystems](https://apsystems.com/) EZ1 inverter local API to MQTT, [HomA](https://github.com/binarybucks/homA) and [Home Assistant](https://www.home-assistant.io).
+This component is a Python package to gateway [APsystems](https://apsystems.com/) EZ1 inverter local API to MQTT, [HomA](https://github.com/binarybucks/homA) and [Home Assistant](https://www.home-assistant.io).
 
 
 ## Acknowledgements
 
-This work is based on [aps2mqtt (v1.2.0)](https://github.com/fligneul/aps2mqtt). Thanks for your work @fligneul!
+This work is based on [aps2mqtt (v1.2.0)](https://github.com/fligneul/aps2mqtt). Thanks for your work [Florian L.](https://github.com/fligneul)!
 
 ## Basic Requirements
-* Python >= 3.11
+* Python (details see [pyproject.toml](https://github.com/hmueller01/APsystems-EZ1-mqtt/pyproject.toml))
 * MQTT broker (e.g. [Eclipse Mosquitto](https://github.com/eclipse/mosquitto))
 * [APsystems EZ1 inverter](https://emea.apsystems.com/diy/)
 
@@ -21,21 +21,25 @@ The access to the local API is done by the [APsystems-EZ1-API](https://github.co
 
 ## Installation
 
+<!---
 Binaries are available in the release asset or on [PyPI](https://pypi.org/project/APsystems-EZ1-mqtt/).
 Using a virtual env is recommended for better insulation.
 
 ``` sh
 pip3 install APsystems-EZ1-mqtt
 ```
-
-Alternatively a [github release](https://github.com/hmueller01/APsystems-EZ1-mqtt/releases) can be downloaded or cloned and the dependencies installed manually.
+--->
+Using a [github release](https://github.com/hmueller01/APsystems-EZ1-mqtt/releases) or a cloned git repo needs to install the dependencies manually.
 
 ``` sh
 clone https://github.com/hmueller01/APsystems-EZ1-mqtt
 cd APsystems-EZ1-mqtt
 python3.11 -m venv .venv
 source .venv/bin/activate
+# using pip
 pip3 install -r requirements.txt
+# using poetry
+poetry install
 ```
 
 Start it
@@ -77,7 +81,7 @@ If you do not need [Home Assistant](https://www.home-assistant.io) you can set `
 ### ECU
 
 | Key | Description | Example | Default value |
-|---|---|---|---|
+|:----|:------------|:--------|:--------------|
 | APS_ECU_IP | IP of the ECU | "192.168.0.42" | None, this field id mandatory |
 | APS_ECU_PORT | Communication port of the ECU | 8050 | 8050 |
 | APS_ECU_UPDATE_INTERVAL | Time between the update polls | 60 | 15 |
@@ -89,7 +93,7 @@ If you do not need [Home Assistant](https://www.home-assistant.io) you can set `
 ### MQTT
 
 | Key | Description | Example | Default value |
-|---|---|---|---|
+|:----|:------------|:--------|:--------------|
 | MQTT_BROKER_HOST | Host of the MQTT broker | "broker.hivemq.com" | "127.0.0.1" |
 | MQTT_BROKER_PORT | Port of the MQTT broker | 8883 | 1883 |
 | MQTT_BROKER_USER | User login of the MQTT broker | "john-deere" | "" |
