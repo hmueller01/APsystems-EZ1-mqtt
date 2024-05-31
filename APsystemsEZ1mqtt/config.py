@@ -1,4 +1,4 @@
-# Author: Holger Mueller <github@euhm.de>
+# Author: Holger Mueller <github euhm.de>
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
 """Application config classes, can be set by file or env variable"""
@@ -60,6 +60,7 @@ class Config:
             cfg = os.environ
             self.mqtt_config = MQTTConfig(cfg)
             self.ecu_config = ECUConfig(cfg)
+
 
     def __load_yaml_config_file(self, config_path):
         with open(config_path, "r", encoding="UTF-8") as yml_cfg:

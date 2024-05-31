@@ -1,4 +1,4 @@
-# Author: Holger Mueller <github@euhm.de>
+# Author: Holger Mueller <github euhm.de>
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
 """Query APsystems EZ1 inverter data periodically and send them to the MQTT broker"""
