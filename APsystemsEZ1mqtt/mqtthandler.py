@@ -1,4 +1,4 @@
-# Author: Holger Mueller <github@euhm.de>
+# Author: Holger Mueller <github euhm.de>
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
 """Handle MQTT connection and data publishing"""
@@ -16,27 +16,31 @@ from paho.mqtt.enums import CallbackAPIVersion
 
 _LOGGER = logging.getLogger(__name__)
 
+# amount of max retries to connect to the MQTT broker
 _MAX_RETRY = 10
 
-_homa_arr = [
-    {'control': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'class': 'power'},
-    {'control': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
-    {'control': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
-    {'control': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'class': 'energy'},
-    {'control': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
-    {'control': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
-    {'control': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    {'control': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    {'control': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    {'control': 'Power Status',       'type': 'switch', 'room': '',     'unit': '',     'class': 'switch'},
-    {'control': 'Power Max Output',   'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'number'},
-    {'control': 'Device id',          'type': 'text',   'room': '',     'unit': '',     'class': None},
-    {'control': 'Device IP',          'type': 'text',   'room': '',     'unit': '',     'class': None},
-    {'control': 'Version',            'type': 'text',   'room': '',     'unit': '',     'class': None},
-    {'control': 'Start time',         'type': 'text',   'room': '',     'unit': '',     'class': 'date'},
-    {'control': 'State',              'type': 'text',   'room': '',     'unit': '',     'class': None},
-]
-
+# dictionary of MQTT messages and HomA / Home Assistant configuration
+# 'topic' is the last part of the topic that is send
+# 'type', 'room' and 'unit' is needed by HomA
+# 'unit' and 'class' is needed by Home Assistant
+_mqtt_d = {
+    'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'class': 'power'},
+    'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
+    'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
+    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'class': 'energy'},
+    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
+    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
+    'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
+    'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
+    'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
+    'ps': {'topic': 'Power Status',       'type': 'switch', 'room': '',     'unit': '',     'class': 'switch'},
+    'po': {'topic': 'Power Max Output',   'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'number'},
+    'id': {'topic': 'Device id',          'type': 'text',   'room': '',     'unit': '',     'class': None},
+    'ip': {'topic': 'Device IP',          'type': 'text',   'room': '',     'unit': '',     'class': None},
+    've': {'topic': 'Version',            'type': 'text',   'room': '',     'unit': '',     'class': None},
+    'ti': {'topic': 'Start time',         'type': 'text',   'room': '',     'unit': '',     'class': 'date'},
+    'wi': {'topic': 'State',              'type': 'text',   'room': '',     'unit': '',     'class': None}, # last will topic
+}
 
 class MQTTHandler:
     """Handle MQTT connection to broker and publish message"""
@@ -101,6 +105,7 @@ class MQTTHandler:
         else:
             _LOGGER.debug("Use unsecured connection")
 
+        self.client.will_set(_mqtt_d['wi']['topic'], "offline", 1, True)
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
 
@@ -146,16 +151,16 @@ class MQTTHandler:
         if self.mqtt_config.homa_enabled:
             topic_base = "/devices/" + self.mqtt_config.homa_systemid + "/controls/" # e.g. "/devices/123456-solar/controls/"
         else:
-            topic_base = self.mqtt_config.topic_prefix  # e.g. "/aps/"
-        output[topic_base + "Power"] = f'{(data.p1 + data.p2):d}'
-        output[topic_base + "Power P1"] = f'{data.p1:d}'
-        output[topic_base + "Power P2"] = f'{data.p2:d}'
-        output[topic_base + "Energy today"] = f'{(data.e1 + data.e2):0.3f}'
-        output[topic_base + "Energy today P1"] = f'{data.e1:0.3f}'
-        output[topic_base + "Energy today P2"] = f'{data.e2:0.3f}'
-        output[topic_base + "Energy lifetime"] = f'{(data.te1 + data.te2):0.3f}'
-        output[topic_base + "Energy lifetime P1"] = f'{data.te1:0.3f}'
-        output[topic_base + "Energy lifetime P2"] = f'{data.te2:0.3f}'
+            topic_base = self.mqtt_config.topic_prefix  # e.g. "aps/"
+        output[topic_base + _mqtt_d['pt']['topic']] = f'{(data.p1 + data.p2):d}'
+        output[topic_base + _mqtt_d['p1']['topic']] = f'{data.p1:d}'
+        output[topic_base + _mqtt_d['p2']['topic']] = f'{data.p2:d}'
+        output[topic_base + _mqtt_d['et']['topic']] = f'{(data.e1 + data.e2):0.3f}'
+        output[topic_base + _mqtt_d['e1']['topic']] = f'{data.e1:0.3f}'
+        output[topic_base + _mqtt_d['e2']['topic']] = f'{data.e2:0.3f}'
+        output[topic_base + _mqtt_d['lt']['topic']] = f'{(data.te1 + data.te2):0.1f}'
+        output[topic_base + _mqtt_d['l1']['topic']] = f'{data.te1:0.1f}'
+        output[topic_base + _mqtt_d['l2']['topic']] = f'{data.te2:0.1f}'
         return output
 
 
@@ -179,19 +184,18 @@ class MQTTHandler:
         # setup controls
         topic_base += "controls/" # e.g. "/devices/123456-solar/controls/"
         order = 1
-        for homa in _homa_arr:
-            self._publish(self.client, topic_base + homa['control'] + "/meta/type", homa['type'], qos, retain)
-            self._publish(self.client, topic_base + homa['control'] + "/meta/order", order, qos, retain)
-            self._publish(self.client, topic_base + homa['control'] + "/meta/room", homa['room'], qos, retain)
-            self._publish(self.client, topic_base + homa['control'] + "/meta/unit", homa['unit'], qos, retain)
+        for key, homa in _mqtt_d.items():
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", homa['type'], qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", order, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", homa['room'], qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", homa['unit'], qos, retain)
             order += 1
 
-        self._publish(self.client, topic_base + "Device id", ecu_info.deviceId, qos, retain)
-        self._publish(self.client, topic_base + "Device IP", ecu_info.ipAddr, qos, retain)
-        self._publish(self.client, topic_base + "Version", ecu_info.devVer, qos, retain)
-        #self._publish(self.client, topic_base + "Start time", time.asctime(time.localtime(time.time())), qos, retain) # not ISO 8601 compliant
-        self._publish(self.client, topic_base + "Start time", datetime.now(tz).isoformat(timespec='seconds'), qos, retain)
-        self._publish(self.client, topic_base + "State", "online", qos, retain)
+        self._publish(self.client, topic_base + _mqtt_d['id']['topic'], ecu_info.deviceId, qos, retain)
+        self._publish(self.client, topic_base + _mqtt_d['ip']['topic'], ecu_info.ipAddr, qos, retain)
+        self._publish(self.client, topic_base + _mqtt_d['ve']['topic'], ecu_info.devVer, qos, retain)
+        self._publish(self.client, topic_base + _mqtt_d['ti']['topic'], datetime.now(tz).isoformat(timespec='seconds'), qos, retain)
+        self._publish(self.client, topic_base + _mqtt_d['wi']['topic'], "online", qos, retain) # last will as long as connected
 
         _LOGGER.debug("HomA MQTT values published")
 
@@ -205,7 +209,7 @@ class MQTTHandler:
             return
 
         self._check_mqtt_connected()
-        for homa in _homa_arr:
+        for key, homa in _mqtt_d.items():
             self._hass_config(homa, ecu_config, ecu_info)
 
 
@@ -217,17 +221,17 @@ class MQTTHandler:
         if dict['class'] is None:
             return
 
-        object_id = self.mqtt_config.hass_device_id + "-" + dict['control'].replace(" ", "-")
+        object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
         if self.mqtt_config.homa_enabled:
-            state_topic = "/devices/" + self.mqtt_config.homa_systemid + "/controls/" + dict['control']
+            state_topic = "/devices/" + self.mqtt_config.homa_systemid + "/controls/" + dict['topic']
         else:
-            state_topic = self.mqtt_config.topic_prefix + dict['control']
+            state_topic = self.mqtt_config.topic_prefix + dict['topic']
 
         # topic: <discovery_prefix>/<component>/[<node_id>/]<object_id>/config
         topic = "homeassistant/sensor/" + object_id + "/config"
 
         payload = {
-            "name":self.mqtt_config.hass_name_prefix + dict['control'],
+            "name":self.mqtt_config.hass_name_prefix + dict['topic'],
             "state_topic":state_topic,
             "unique_id":object_id,
             "object_id":object_id,
