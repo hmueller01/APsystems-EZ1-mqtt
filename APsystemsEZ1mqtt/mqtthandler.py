@@ -200,6 +200,31 @@ class MQTTHandler:
         _LOGGER.debug("HomA MQTT values published")
 
 
+    def homa_clear(self):
+        """Clear HomA init messages to MQTT"""
+        _LOGGER.debug("Start homa_clear")
+
+        self._check_mqtt_connected()
+
+        retain = True
+        qos = 1
+        topic_base = "/devices/" + self.mqtt_config.homa_systemid + "/" # e.g. "/devices/123456-solar/"
+
+        self._publish(self.client, topic_base + "meta/name", None, qos, retain)
+        self._publish(self.client, topic_base + "meta/room", None, qos, retain)
+
+        # setup controls
+        topic_base += "controls/" # e.g. "/devices/123456-solar/controls/"
+        for key, homa in _mqtt_d.items():
+            self._publish(self.client, topic_base + homa['topic'], None, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", None, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", None, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", None, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", None, qos, retain)
+
+        _LOGGER.info("HomA MQTT topics cleared")
+
+
     def hass_init(self, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         "Send the Home Assistant config messages to enable discovery"
         _LOGGER.debug("Start homeassistant_init")
@@ -272,3 +297,24 @@ class MQTTHandler:
             payload['device_class'] = dict['class']
 
         self._publish(self.client, topic, json.dumps(payload), qos, retain)
+
+
+    def hass_clear(self):
+        "Clear Home Assistant config messages"
+        _LOGGER.debug("Start hass_clear")
+
+        retain = True
+        qos = 1
+        self._check_mqtt_connected()
+        for key, dict in _mqtt_d.items():
+            object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
+            topic = "homeassistant/sensor/" + object_id + "/config"
+            if dict['class'] is None:
+                break
+            elif dict['class'] == "number":
+                topic = "homeassistant/number/" + object_id + "/config"
+            elif dict['class'] == "switch":
+                topic = "homeassistant/switch/" + object_id + "/config"
+            self._publish(self.client, topic, None, qos, retain)
+
+        _LOGGER.info("Home Assistant config topics cleared")
