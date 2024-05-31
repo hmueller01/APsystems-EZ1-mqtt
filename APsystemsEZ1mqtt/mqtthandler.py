@@ -174,7 +174,7 @@ class MQTTHandler:
 
         self._check_mqtt_connected()
 
-        retain = False
+        retain = True
         qos = 1
         topic_base = "/devices/" + self.mqtt_config.homa_systemid + "/" # e.g. "/devices/123456-solar/"
 
@@ -240,7 +240,7 @@ class MQTTHandler:
 
     def _hass_config(self, dict, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         """Send a single Home Assistant config message to enable discovery"""
-        retain = False
+        retain = True
         qos = 1
 
         if dict['class'] is None:
