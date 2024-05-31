@@ -19,13 +19,11 @@ _LOGGER = logging.getLogger(__name__)
 
 def cli_args():
     """Get command line arguments and parse them"""
-    parser = ArgumentParser(prog="APsystemsEZ1mqtt", description="Read data from APsystems EZ1 local API and send to MQTT broker, configure HomA and Home Assistant environment.")
-    parser.add_argument(
-        "-c", "--config", dest="config_path", help="load YAML config file", metavar="FILE"
-    )
-    parser.add_argument(
-        "-d", "--debug", dest="debug_level", help="enable debug logs", action="store_true"
-    )
+    parser = ArgumentParser(prog="APsystemsEZ1mqtt", 
+                            description="Read data from APsystems EZ1 local API and send to MQTT broker, configure HomA and Home Assistant environment.")
+    parser.add_argument("-c", "--config", dest="config_path", help="load YAML config file", metavar="FILE")
+    parser.add_argument("-d", "--debug", dest="debug_level", help="enable debug logs", action="store_true")
+    parser.add_argument("-r", dest="remove", help="remove retained MQTT topics", action="store_true")
     return parser.parse_args()
 
 
@@ -63,6 +61,13 @@ async def main():
         conf.mqtt_config.hass_device_id = ecu_info.deviceId
     mqtt_handler = MQTTHandler(conf.mqtt_config)
     mqtt_handler.connect_mqtt()
+    
+    # if -r is passed remove all retained topics and exit
+    if args.remove:
+        mqtt_handler.hass_clear()
+        mqtt_handler.homa_clear()
+        sys.exit(0)
+
     mqtt_handler.hass_init(conf.ecu_config, ecu_info) # must init before homa_init
     mqtt_handler.homa_init(ecu_info, ecu.city.tzinfo)
 
