@@ -22,8 +22,8 @@ def cli_args():
     parser = ArgumentParser(prog="APsystemsEZ1mqtt", 
                             description="Read data from APsystems EZ1 local API and send to MQTT broker, configure HomA and Home Assistant environment.")
     parser.add_argument("-c", "--config", dest="config_path", help="load YAML config file", metavar="FILE")
-    parser.add_argument("-d", "--debug", dest="debug_level", help="enable debug logs", action="store_true")
-    parser.add_argument("-r", dest="remove", help="remove retained MQTT topics", action="store_true")
+    parser.add_argument("-d", "--debug", dest="debug", help="enable debug logs", action="store_true")
+    parser.add_argument("-r", "--remove", dest="remove", help="remove retained MQTT topics", action="store_true")
     return parser.parse_args()
 
 
@@ -34,12 +34,12 @@ async def main():
     if not conf.ecu_config.ipaddr:
         _LOGGER.error("APS_ECU_IP not found. No config given? Use -h")
         sys.exit(1)
-    logging.basicConfig(level=logging.DEBUG if args.debug_level else logging.INFO,
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="%(levelname)s:%(name)s.%(funcName)s(): %(message)s")
     ecu = ECU(conf.ecu_config)
 
-    while (ecu_info := await ecu.update_info()) is None:
-        if args.debug_level:
+    while (ecu_info := await ecu.get_device_info()) is None:
+        if args.debug:
             _LOGGER.info("Can't read APsystems info data. Setting dummy data.")
             ecu_info = ReturnDeviceInfo(
                 deviceId='debug dummy Id',
@@ -59,7 +59,7 @@ async def main():
     if not conf.mqtt_config.hass_device_id:
         # if no hass_device_id is given in config use deviceId
         conf.mqtt_config.hass_device_id = ecu_info.deviceId
-    mqtt_handler = MQTTHandler(conf.mqtt_config)
+    mqtt_handler = MQTTHandler(conf.mqtt_config, retain = not args.debug)
     mqtt_handler.connect_mqtt()
     
     # if -r is passed remove all retained topics and exit
@@ -78,7 +78,7 @@ async def main():
         else:
             sleeptime = float(conf.ecu_config.update_interval)
             try:
-                ecu_data = await ecu.update_data()
+                ecu_data = await ecu.get_output_data()
                 if ecu_data is not None:
                     mqtt_handler.publish_data(ecu_data)
             except Exception as e:
