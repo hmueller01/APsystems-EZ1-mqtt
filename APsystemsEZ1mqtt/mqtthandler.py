@@ -45,8 +45,10 @@ _mqtt_d = {
 class MQTTHandler:
     """Handle MQTT connection to broker and publish message"""
 
-    def __init__(self, mqtt_config: MQTTConfig):
+    def __init__(self, mqtt_config: MQTTConfig, qos: int = 1, retain = False):
         self.mqtt_config = mqtt_config
+        self.qos = qos
+        self.retain = retain
         self.client = None
 
 
@@ -69,11 +71,9 @@ class MQTTHandler:
         result = client.publish(topic, msg, qos, retain)
         status = result[0]
         if status == 0:
-            _LOGGER.debug("Send `%s` to topic `%s`", msg, topic)
+            _LOGGER.debug("Send `%s` to topic `%s` (qos=%d, retain=%r)", msg, topic, qos, retain)
         else:
-            _LOGGER.error(
-                "Failed to send message to topic %s: %s", topic, mqtt_client.error_string(status)
-            )
+            _LOGGER.error("Failed to send message to topic %s: %s", topic, mqtt_client.error_string(status))
 
 
     def connect_mqtt(self):
@@ -138,7 +138,7 @@ class MQTTHandler:
         self._check_mqtt_connected()
 
         for topic, value in self._parse_data(data).items():
-            self._publish(self.client, topic, value, 1, False)
+            self._publish(self.client, topic, value, self.qos, self.retain)
         _LOGGER.debug("MQTT values published")
 
 
@@ -174,28 +174,26 @@ class MQTTHandler:
 
         self._check_mqtt_connected()
 
-        retain = True
-        qos = 1
         topic_base = "/devices/" + self.mqtt_config.homa_systemid + "/" # e.g. "/devices/123456-solar/"
 
-        self._publish(self.client, topic_base + "meta/name", self.mqtt_config.homa_name, qos, retain)
-        self._publish(self.client, topic_base + "meta/room", self.mqtt_config.homa_room, qos, retain)
+        self._publish(self.client, topic_base + "meta/name", self.mqtt_config.homa_name, self.qos, self.retain)
+        self._publish(self.client, topic_base + "meta/room", self.mqtt_config.homa_room, self.qos, self.retain)
 
         # setup controls
         topic_base += "controls/" # e.g. "/devices/123456-solar/controls/"
         order = 1
         for key, homa in _mqtt_d.items():
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", homa['type'], qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", order, qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", homa['room'], qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", homa['unit'], qos, retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", homa['type'], self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", order, self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", homa['room'], self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", homa['unit'], self.qos, self.retain)
             order += 1
 
-        self._publish(self.client, topic_base + _mqtt_d['id']['topic'], ecu_info.deviceId, qos, retain)
-        self._publish(self.client, topic_base + _mqtt_d['ip']['topic'], ecu_info.ipAddr, qos, retain)
-        self._publish(self.client, topic_base + _mqtt_d['ve']['topic'], ecu_info.devVer, qos, retain)
-        self._publish(self.client, topic_base + _mqtt_d['ti']['topic'], datetime.now(tz).isoformat(timespec='seconds'), qos, retain)
-        self._publish(self.client, topic_base + _mqtt_d['wi']['topic'], "online", qos, retain) # last will as long as connected
+        self._publish(self.client, topic_base + _mqtt_d['id']['topic'], ecu_info.deviceId, self.qos, self.retain)
+        self._publish(self.client, topic_base + _mqtt_d['ip']['topic'], ecu_info.ipAddr, self.qos, self.retain)
+        self._publish(self.client, topic_base + _mqtt_d['ve']['topic'], ecu_info.devVer, self.qos, self.retain)
+        self._publish(self.client, topic_base + _mqtt_d['ti']['topic'], datetime.now(tz).isoformat(timespec='seconds'), self.qos, self.retain)
+        self._publish(self.client, topic_base + _mqtt_d['wi']['topic'], "online", self.qos, self.retain) # last will as long as connected
 
         _LOGGER.debug("HomA MQTT values published")
 
@@ -206,21 +204,19 @@ class MQTTHandler:
 
         self._check_mqtt_connected()
 
-        retain = True
-        qos = 1
         topic_base = "/devices/" + self.mqtt_config.homa_systemid + "/" # e.g. "/devices/123456-solar/"
 
-        self._publish(self.client, topic_base + "meta/name", None, qos, retain)
-        self._publish(self.client, topic_base + "meta/room", None, qos, retain)
+        self._publish(self.client, topic_base + "meta/name", None, self.qos, self.retain)
+        self._publish(self.client, topic_base + "meta/room", None, self.qos, self.retain)
 
         # setup controls
         topic_base += "controls/" # e.g. "/devices/123456-solar/controls/"
         for key, homa in _mqtt_d.items():
-            self._publish(self.client, topic_base + homa['topic'], None, qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", None, qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", None, qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", None, qos, retain)
-            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", None, qos, retain)
+            self._publish(self.client, topic_base + homa['topic'], None, self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/type", None, self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/order", None, self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/room", None, self.qos, self.retain)
+            self._publish(self.client, topic_base + homa['topic'] + "/meta/unit", None, self.qos, self.retain)
 
         _LOGGER.info("HomA MQTT topics cleared")
 
@@ -240,9 +236,6 @@ class MQTTHandler:
 
     def _hass_config(self, dict, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         """Send a single Home Assistant config message to enable discovery"""
-        retain = True
-        qos = 1
-
         if dict['class'] is None:
             return
 
@@ -296,15 +289,13 @@ class MQTTHandler:
         else:
             payload['device_class'] = dict['class']
 
-        self._publish(self.client, topic, json.dumps(payload), qos, retain)
+        self._publish(self.client, topic, json.dumps(payload), self.qos, self.retain)
 
 
     def hass_clear(self):
         "Clear Home Assistant config messages"
         _LOGGER.debug("Start hass_clear")
 
-        retain = True
-        qos = 1
         self._check_mqtt_connected()
         for key, dict in _mqtt_d.items():
             object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
@@ -315,6 +306,6 @@ class MQTTHandler:
                 topic = "homeassistant/number/" + object_id + "/config"
             elif dict['class'] == "switch":
                 topic = "homeassistant/switch/" + object_id + "/config"
-            self._publish(self.client, topic, None, qos, retain)
+            self._publish(self.client, topic, None, self.qos, self.retain)
 
         _LOGGER.info("Home Assistant config topics cleared")
