@@ -8,7 +8,7 @@ This component is a Python package to gateway [APsystems](https://apsystems.com/
 
 ## Acknowledgements
 
-This work is based on [aps2mqtt (v1.2.0)](https://github.com/fligneul/aps2mqtt). Thanks for your work [Florian L.](https://github.com/fligneul)!
+This work is based on [aps2mqtt (v1.2.0)](https://github.com/fligneul/aps2mqtt). Thanks for your work [Florian L.](https://github.com/fligneul)! And thanks for the permission to switch to MIT license.
 
 ## Basic Requirements
 * Python (details see [pyproject.toml](pyproject.toml))
