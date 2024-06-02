@@ -14,7 +14,9 @@ from APsystemsEZ1mqtt.mqtthandler import MQTTHandler
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
+_ecu: ECU
 _LOGGER = logging.getLogger(__name__)
+_mqtt: MQTTHandler
 
 
 def cli_args():
@@ -27,8 +29,17 @@ def cli_args():
     return parser.parse_args()
 
 
+async def async_on_status_power(status: bool):
+    """Async callback function for MQTTHandler on_status_power"""
+    global _ecu, _mqtt
+    _LOGGER.debug(f"Start async_on_status_power({status})")
+    status_power = await _ecu.set_status_power(status)
+    _mqtt.publish_status_power(status_power)
+
+
 async def main():
     """Main application. Does not return. Terminate using <Ctrl>-C."""
+    global _ecu, _LOGGER, _mqtt
     args = cli_args()
     conf = Config(args.config_path)
     if not conf.ecu_config.ipaddr:
@@ -36,9 +47,9 @@ async def main():
         sys.exit(1)
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="%(levelname)s:%(name)s.%(funcName)s(): %(message)s")
-    ecu = ECU(conf.ecu_config)
+    _ecu = ECU(conf.ecu_config)
 
-    while (ecu_info := await ecu.get_device_info()) is None:
+    while (ecu_info := await _ecu.get_device_info()) is None:
         if args.debug:
             _LOGGER.info("Can't read APsystems info data. Setting dummy data.")
             ecu_info = ReturnDeviceInfo(
@@ -59,36 +70,42 @@ async def main():
     if not conf.mqtt_config.hass_device_id:
         # if no hass_device_id is given in config use deviceId
         conf.mqtt_config.hass_device_id = ecu_info.deviceId
-    mqtt_handler = MQTTHandler(conf.mqtt_config, retain = not args.debug)
-    mqtt_handler.connect_mqtt()
+    _mqtt = MQTTHandler(asyncio.get_event_loop(), async_on_status_power, conf.mqtt_config, retain = not args.debug)
+    _mqtt.connect_mqtt()
     
     # if -r is passed remove all retained topics and exit
     if args.remove:
-        mqtt_handler.hass_clear()
-        mqtt_handler.homa_clear()
+        _mqtt.clear_all_topics()
         sys.exit(0)
 
-    mqtt_handler.hass_init(conf.ecu_config, ecu_info) # must init before homa_init
-    mqtt_handler.homa_init(ecu_info, ecu.city.tzinfo)
+    _mqtt.hass_init(conf.ecu_config, ecu_info) # must init before homa_init
+    _mqtt.homa_init(ecu_info, _ecu.city.tzinfo)
+
+    # do this only once a day
+    max_power = await _ecu.get_max_power()
+    status_power = await _ecu.get_status_power()
+    _mqtt.publish_max_power(max_power)
+    _mqtt.publish_status_power(status_power)
 
     while True:
         now = datetime.now()
-        if ecu.is_night(now):
-            sleeptime = ecu.wake_up_time().timestamp() - now.timestamp()
+        if _ecu.is_night(now):
+            sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp()
         else:
             sleeptime = float(conf.ecu_config.update_interval)
             try:
-                ecu_data = await ecu.get_output_data()
+                ecu_data = await _ecu.get_output_data()
                 if ecu_data is not None:
-                    mqtt_handler.publish_data(ecu_data)
+                    _mqtt.publish_data(ecu_data)
             except Exception as e:
                 _LOGGER.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
-        _LOGGER.info("Next update at: %s", (now.astimezone(ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z"))
+        _LOGGER.info("Next update at: %s", (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z"))
         # compensate code runtime
         sleeptime = max(0, sleeptime - (datetime.now().timestamp() - now.timestamp()))
         _LOGGER.debug(f"Time to sleep: {sleeptime:0.2f}s")
         time.sleep(sleeptime)
+        #await asyncio.sleep(sleeptime)
 
 
 if __name__ == "__main__":
