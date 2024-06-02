@@ -4,7 +4,7 @@
 """Handle APsystemsEZ1M ECU requests"""
 import logging
 
-from APsystemsEZ1 import APsystemsEZ1M
+from APsystemsEZ1 import APsystemsEZ1M, Status
 from astral import LocationInfo
 from astral.sun import daylight
 from datetime import datetime, timedelta
@@ -41,3 +41,37 @@ class ECU(APsystemsEZ1M):
     def wake_up_time(self):
         night_start, night_end = self.night()
         return night_end
+
+
+    async def get_status_power(self) -> bool | None:
+        """
+        Retrieves the current power status of the device. This method sends a request to the
+        "getOnOff" endpoint.
+
+        :return: True when ON, False when OFF, None if request fails
+        """
+        response = await self._request("getOnOff")
+        """
+        The 'data' field in the returned dictionary includes the 'status' key, representing the
+        current power status of the device, where '0' indicates that the device is ON, and '1'
+        indicates that it is OFF.
+        """
+        return int(response["data"]["status"]) == 0 if response else None
+
+
+    async def set_status_power(self, status: bool | None) -> bool | None:
+        """
+        Sets the power status of the device to either ON or OFF. This method sends a request to the
+        "setOnOff" endpoint.
+
+        :param status: The desired power status for the device, specified as True = ON and False = OFF.
+        :return: True when ON, False when OFF, None if request fails
+        """
+        _LOGGER.debug(f'Start set_status_power(status={status})')
+        if status is None:
+            return None
+
+        status_value = "0" if status is True else "1"
+        result = await self.set_device_power_status(status_value)
+        _LOGGER.debug(f'End set_status_power() -> {result}')
+        return (result is Status.normal) if result is not None else None
