@@ -279,7 +279,7 @@ class MQTTHandler:
         if dict['comp'] is None:
             return
 
-        object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
+        object_id = self.mqtt_config.hass_device_id + "-" + str(dict['topic']).replace(" ", "-")
         state_topic = self._get_topic_base() + dict['topic']
 
         # topic: <discovery_prefix>/<component>/[<node_id>/]<object_id>/config
@@ -303,7 +303,7 @@ class MQTTHandler:
         }
         # add unit, if there is one
         if dict['unit']:
-            payload['unit_of_measurement'] = dict['unit']
+            payload['unit_of_measurement'] = str(dict['unit']).strip()
 
         # special handling depending on dict['comp']
         if dict['comp'] == "number":
@@ -355,7 +355,7 @@ class MQTTHandler:
 
             # clear Home Assistant config topics
             if dict['comp']:
-                object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
+                object_id = self.mqtt_config.hass_device_id + "-" + str(dict['topic']).replace(" ", "-")
                 hass_topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
                 self._publish(self.client, hass_topic, None, self.qos, self.retain)
         
