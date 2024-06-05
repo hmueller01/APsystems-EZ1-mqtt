@@ -292,7 +292,7 @@ class MQTTHandler:
             "object_id":object_id,
             "device":{
                 "identifiers":[self.mqtt_config.hass_device_id],
-                "name":"PV Solar Balkonkraftwerk",
+                "name":self.mqtt_config.hass_device_name,
                 "manufacturer":"APsystems",
                 "model":"EZ1",
                 "configuration_url":"http://" + ecu_config.ipaddr + ":" + str(ecu_config.port) + "/getAlarm",
