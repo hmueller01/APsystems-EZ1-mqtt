@@ -6,12 +6,13 @@ import asyncio
 import logging
 import sys
 
+from argparse import ArgumentParser
+from datetime import datetime, timedelta
+
 from APsystemsEZ1 import ReturnDeviceInfo
 from APsystemsEZ1mqtt.config import Config
 from APsystemsEZ1mqtt.ecu import ECU
 from APsystemsEZ1mqtt.mqtthandler import MQTTHandler
-from argparse import ArgumentParser
-from datetime import datetime, timedelta
 
 _ecu: ECU
 _logger = logging.getLogger(__name__)
@@ -22,7 +23,8 @@ _mqtt: MQTTHandler
 def cli_args():
     """Get command line arguments and parse them"""
     parser = ArgumentParser(prog="APsystemsEZ1mqtt",
-                            description="Read data from APsystems EZ1 local API and send to MQTT broker, configure HomA and Home Assistant environment.")
+                            description="Read data from APsystems EZ1 local API and send to MQTT "
+                                        "broker, configure HomA and Home Assistant environment.")
     parser.add_argument("-c", "--config", dest="config_path", help="load YAML config file", metavar="FILE")
     parser.add_argument("-d", "--debug", dest="debug", help="enable debug logs", action="store_true")
     parser.add_argument("-r", "--remove", dest="remove", help="remove retained MQTT topics", action="store_true")
@@ -52,6 +54,7 @@ async def periodic_wakeup():
 
 
 async def periodic_get_data(interval: float):
+    """Periodic get output data from ecu"""
     while True:
         now = datetime.now()
         _logger.debug(f"Start periodic_get_data: {now}")
@@ -73,6 +76,7 @@ async def periodic_get_data(interval: float):
 
 
 async def periodic_get_power(interval: float):
+    """Periodic get power status from ecu"""
     while True:
         now = datetime.now()
         _logger.debug(f"Start periodic_get_power: {now}")
@@ -112,8 +116,7 @@ async def main():
     while ecu_info is None:
         try:
             ecu_info = await _ecu.get_device_info()
-        except Exception as e:
-            pass
+        except Exception:
             if args.debug:
                 _logger.info("Can't read APsystems info data. Setting dummy data.")
                 ecu_info = ReturnDeviceInfo(
