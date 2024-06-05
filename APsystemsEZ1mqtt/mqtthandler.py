@@ -22,24 +22,24 @@ _MAX_RETRY = 10
 # dictionary of MQTT messages and HomA / Home Assistant configuration
 # 'topic' is the last part of the topic that is send
 # 'type', 'room' and 'unit' is needed by HomA
-# 'unit' and 'class' is needed by Home Assistant
+# 'unit', 'comp' (component part of the discovery topic, do not send topic if None) and 'class' (device_class, do not set if None) is needed by Home Assistant
 _mqtt_d = {
-    'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'class': 'power'},
-    'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
-    'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'class': 'power'},
-    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'class': 'energy'},
-    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
-    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy'},
-    'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'class': 'energy_increasing'},
-    'ps': {'topic': 'Power Status',       'type': 'switch', 'room': '',     'unit': '',     'class': 'switch'},
-    'po': {'topic': 'Power Max Output',   'type': 'text',   'room': '',     'unit': ' W',   'class': 'number', 'min': 30, 'max': 800},
-    'id': {'topic': 'Device id',          'type': 'text',   'room': '',     'unit': '',     'class': None},
-    'ip': {'topic': 'Device IP',          'type': 'text',   'room': '',     'unit': '',     'class': None},
-    've': {'topic': 'Version',            'type': 'text',   'room': '',     'unit': '',     'class': None},
-    'ti': {'topic': 'Start time',         'type': 'text',   'room': '',     'unit': '',     'class': 'date'},
-    'wi': {'topic': 'State',              'type': 'text',   'room': '',     'unit': '',     'class': None}, # last will topic
+    'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'comp': 'sensor', 'class': 'power'},
+    'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
+    'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
+    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
+    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
+    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
+    'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'ps': {'topic': 'Power Status',       'type': 'switch', 'room': '',     'unit': '',     'comp': 'switch', 'class': None},
+    'po': {'topic': 'Power Max Output',   'type': 'text',   'room': '',     'unit': ' W',   'comp': 'number', 'class': 'power', 'min': 30, 'max': 800},
+    'id': {'topic': 'Device id',          'type': 'text',   'room': '',     'unit': '',     'comp': None,     'class': None},
+    'ip': {'topic': 'Device IP',          'type': 'text',   'room': '',     'unit': '',     'comp': None,     'class': None},
+    've': {'topic': 'Version',            'type': 'text',   'room': '',     'unit': '',     'comp': None,     'class': None},
+    'ti': {'topic': 'Start time',         'type': 'text',   'room': '',     'unit': '',     'comp': 'sensor', 'class': '_datetime'},
+    'wi': {'topic': 'State',              'type': 'text',   'room': '',     'unit': '',     'comp': None,     'class': None}, # last will topic
 }
 
 class MQTTHandler:
@@ -276,14 +276,14 @@ class MQTTHandler:
 
     def _hass_config(self, dict, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         """Send a single Home Assistant config message to enable discovery"""
-        if dict['class'] is None:
+        if dict['comp'] is None:
             return
 
         object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
         state_topic = self._get_topic_base() + dict['topic']
 
         # topic: <discovery_prefix>/<component>/[<node_id>/]<object_id>/config
-        topic = "homeassistant/sensor/" + object_id + "/config"
+        topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
 
         payload = {
             "name":self.mqtt_config.hass_name_prefix + dict['topic'],
@@ -305,29 +305,29 @@ class MQTTHandler:
         if dict['unit']:
             payload['unit_of_measurement'] = dict['unit']
 
-        # special handling depending on dict['class']
-        if dict['class'] == "energy_increasing":
-            payload['device_class'] = "energy"
-            payload['state_class'] = "total_increasing"
-        elif dict['class'] == "number":
+        # special handling depending on dict['comp']
+        if dict['comp'] == "number":
             payload['command_topic'] = state_topic + "/on"
-            payload['mode'] = "box"
-            payload['icon'] = "mdi:lightning-bolt-outline"
-            payload['min'] = dict['min']
-            payload['max'] = dict['max']
-            topic = "homeassistant/number/" + object_id + "/config"
-        elif dict['class'] == "switch":
+            #payload['mode'] = "box"
+            #payload['icon'] = "mdi:lightning-bolt-outline"
+            if 'min' in dict and dict['min']: payload['min'] = dict['min']
+            if 'max' in dict and dict['max']: payload['max'] = dict['max']
+        elif dict['comp'] == "switch":
             payload['command_topic'] = state_topic + "/on"
             payload['payload_off'] = "0"
             payload['payload_on'] = "1"
-            topic = "homeassistant/switch/" + object_id + "/config"
-        elif dict['class'] == "date":
+
+        # special handling depending on dict['class']
+        if dict['class'] == "_energy_increasing":
+            payload['device_class'] = "energy"
+            payload['state_class'] = "total_increasing"
+        elif dict['class'] == "_datetime":
             #payload['device_class'] = "date" # do not set date class, as output cuts time
             payload['value_template'] = "{{ as_datetime(value) }}"
             payload['icon'] = "mdi:calendar-arrow-right"
-        else:
+        elif dict['class']:
             payload['device_class'] = dict['class']
-
+        
         self._publish(self.client, topic, json.dumps(payload), self.qos, self.retain)
 
 
