@@ -354,14 +354,9 @@ class MQTTHandler:
             self._publish(self.client, homa_base + dict['topic'] + "/meta/unit", None, self.qos, self.retain)
 
             # clear Home Assistant config topics
-            object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
-            hass_topic = "homeassistant/sensor/" + object_id + "/config"
-            if dict['class'] is None:
-                break
-            elif dict['class'] == "number":
-                hass_topic = "homeassistant/number/" + object_id + "/config"
-            elif dict['class'] == "switch":
-                hass_topic = "homeassistant/switch/" + object_id + "/config"
-            self._publish(self.client, hass_topic, None, self.qos, self.retain)
+            if dict['comp']:
+                object_id = self.mqtt_config.hass_device_id + "-" + dict['topic'].replace(" ", "-")
+                hass_topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
+                self._publish(self.client, hass_topic, None, self.qos, self.retain)
         
         _LOGGER.info("All MQTT topics cleared.")
