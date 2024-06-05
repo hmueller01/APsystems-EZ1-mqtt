@@ -222,9 +222,9 @@ class MQTTHandler:
         output[topic_base + _mqtt_d['et']['topic']] = f'{(data.e1 + data.e2):0.3f}'
         output[topic_base + _mqtt_d['e1']['topic']] = f'{data.e1:0.3f}'
         output[topic_base + _mqtt_d['e2']['topic']] = f'{data.e2:0.3f}'
-        output[topic_base + _mqtt_d['lt']['topic']] = f'{(data.te1 + data.te2):0.1f}'
-        output[topic_base + _mqtt_d['l1']['topic']] = f'{data.te1:0.1f}'
-        output[topic_base + _mqtt_d['l2']['topic']] = f'{data.te2:0.1f}'
+        output[topic_base + _mqtt_d['lt']['topic']] = f'{(data.te1 + data.te2):0.2f}'
+        output[topic_base + _mqtt_d['l1']['topic']] = f'{data.te1:0.2f}'
+        output[topic_base + _mqtt_d['l2']['topic']] = f'{data.te2:0.2f}'
         return output
 
 
