@@ -307,6 +307,7 @@ class MQTTHandler:
 
         # special handling depending on dict['comp']
         if dict['comp'] == "number":
+            if dict['class']: payload['device_class'] = dict['class']
             payload['command_topic'] = state_topic + "/on"
             #payload['mode'] = "box"
             #payload['icon'] = "mdi:lightning-bolt-outline"
@@ -316,23 +317,22 @@ class MQTTHandler:
             payload['command_topic'] = state_topic + "/on"
             payload['payload_off'] = "0"
             payload['payload_on'] = "1"
-
-        # special handling depending on dict['class']
-        if dict['class'] == "energy":
-            payload['device_class'] = dict['class']
-            payload['state_class'] = "measurement"
-        elif dict['class'] == "_energy_total":
-            payload['device_class'] = "energy"
-            payload['state_class'] = "total"
-        elif dict['class'] == "_energy_increasing":
-            payload['device_class'] = "energy"
-            payload['state_class'] = "total_increasing"
-        elif dict['class'] == "_datetime":
-            #payload['device_class'] = "date" # do not set date class, as output cuts time
-            payload['value_template'] = "{{ as_datetime(value) }}"
-            payload['icon'] = "mdi:calendar-arrow-right"
-        elif dict['class']:
-            payload['device_class'] = dict['class']
+        elif dict['comp'] == "sensor":
+            if dict['class'] in ["energy", "power"]:
+                payload['device_class'] = dict['class']
+                payload['state_class'] = "measurement"
+            elif dict['class'] == "_energy_total":
+                payload['device_class'] = "energy"
+                payload['state_class'] = "total"
+            elif dict['class'] == "_energy_increasing":
+                payload['device_class'] = "energy"
+                payload['state_class'] = "total_increasing"
+            elif dict['class'] == "_datetime":
+                #payload['device_class'] = "date" # do not set date class, as output cuts time
+                payload['value_template'] = "{{ as_datetime(value) }}"
+                payload['icon'] = "mdi:calendar-arrow-right"
+            elif dict['class']:
+                payload['device_class'] = dict['class']
         
         self._publish(self.client, topic, json.dumps(payload), self.qos, self.retain)
 
