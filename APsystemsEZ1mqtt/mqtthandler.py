@@ -318,7 +318,13 @@ class MQTTHandler:
             payload['payload_on'] = "1"
 
         # special handling depending on dict['class']
-        if dict['class'] == "_energy_increasing":
+        if dict['class'] == "energy":
+            payload['device_class'] = dict['class']
+            payload['state_class'] = "measurement"
+        elif dict['class'] == "_energy_total":
+            payload['device_class'] = "energy"
+            payload['state_class'] = "total"
+        elif dict['class'] == "_energy_increasing":
             payload['device_class'] = "energy"
             payload['state_class'] = "total_increasing"
         elif dict['class'] == "_datetime":
