@@ -57,7 +57,7 @@ class MQTTHandler:
     def on_connect(self, client, userdata, flags, rc):
         """Callback function on broker connection"""
         del userdata, flags
-        
+
         # Subscribe to topics with specific callbacks
         topic_base = self._get_topic_base()
         client.subscribe(topic_base + _mqtt_d['ps']['topic'] + "/on")
@@ -105,7 +105,7 @@ class MQTTHandler:
     def _get_topic_base(self) -> str:
         """
         Get the base topic string depending on HomA enabled.
-        
+
         e.g. "/devices/123456-solar/controls/" (using mqtt_config.homa_systemid) or "aps/ (using mqtt_config.topic_prefix)"
         """
         if self.mqtt_config.homa_enabled:
@@ -118,7 +118,7 @@ class MQTTHandler:
     def connect_mqtt(self):
         """Create connection to MQTT broker"""
         _LOGGER.debug("Create MQTT client")
-        self.client = mqtt_client.Client(CallbackAPIVersion.VERSION1, self.mqtt_config.client_id, 
+        self.client = mqtt_client.Client(CallbackAPIVersion.VERSION1, self.mqtt_config.client_id,
                                          clean_session=False if self.mqtt_config.client_id else True)
 
         if len(self.mqtt_config.broker_user.strip()) > 0:
@@ -147,7 +147,7 @@ class MQTTHandler:
         self.client.will_set(_mqtt_d['wi']['topic'], "offline", 1, True)
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
-        
+
         # add callback for power status switch
         topic_base = self._get_topic_base()
         topic = topic_base + _mqtt_d['ps']['topic'] + "/on"
@@ -184,7 +184,7 @@ class MQTTHandler:
         self._check_mqtt_connected()
         topic_base = self._get_topic_base()
         if max_power is not None:
-            self._publish(self.client, topic_base + _mqtt_d['po']['topic'], 
+            self._publish(self.client, topic_base + _mqtt_d['po']['topic'],
                           max_power, self.qos, self.retain)
 
 
@@ -194,7 +194,7 @@ class MQTTHandler:
         self._check_mqtt_connected()
         topic_base = self._get_topic_base()
         if status is not None:
-            self._publish(self.client, topic_base + _mqtt_d['ps']['topic'], 
+            self._publish(self.client, topic_base + _mqtt_d['ps']['topic'],
                           "1" if status else "0", self.qos, self.retain)
 
 
@@ -257,7 +257,7 @@ class MQTTHandler:
         topic_base = topic_base.replace("/controls/", "/meta/")
         self._publish(self.client, topic_base + "name", self.mqtt_config.homa_name, self.qos, self.retain)
         self._publish(self.client, topic_base + "room", self.mqtt_config.homa_room, self.qos, self.retain)
-        
+
         _LOGGER.debug("HomA MQTT values published")
 
 
@@ -333,7 +333,7 @@ class MQTTHandler:
                 payload['icon'] = "mdi:calendar-arrow-right"
             elif dict['class']:
                 payload['device_class'] = dict['class']
-        
+
         self._publish(self.client, topic, json.dumps(payload), self.qos, self.retain)
 
 
@@ -364,5 +364,5 @@ class MQTTHandler:
                 object_id = self.mqtt_config.hass_device_id + "-" + str(dict['topic']).replace(" ", "-")
                 hass_topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
                 self._publish(self.client, hass_topic, None, self.qos, self.retain)
-        
+
         _LOGGER.info("All MQTT topics cleared.")

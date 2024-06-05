@@ -21,7 +21,7 @@ _mqtt: MQTTHandler
 
 def cli_args():
     """Get command line arguments and parse them"""
-    parser = ArgumentParser(prog="APsystemsEZ1mqtt", 
+    parser = ArgumentParser(prog="APsystemsEZ1mqtt",
                             description="Read data from APsystems EZ1 local API and send to MQTT broker, configure HomA and Home Assistant environment.")
     parser.add_argument("-c", "--config", dest="config_path", help="load YAML config file", metavar="FILE")
     parser.add_argument("-d", "--debug", dest="debug", help="enable debug logs", action="store_true")
@@ -96,7 +96,7 @@ async def periodic_get_power(interval: float):
 async def main():
     """Main application. Does not return. Terminate using <Ctrl>-C."""
     global _ecu, _logger, _mqtt, _loop
-    
+
     _loop = asyncio.get_event_loop()
     args = cli_args()
     conf = Config(args.config_path)
@@ -137,7 +137,7 @@ async def main():
                         lambda value: _loop.call_soon_threadsafe(asyncio.create_task, async_on_max_power(value)),
                         conf.mqtt_config, retain = not args.debug)
     _mqtt.connect_mqtt()
-    
+
     # if -r is passed remove all retained topics and exit
     if args.remove:
         _mqtt.clear_all_topics()
