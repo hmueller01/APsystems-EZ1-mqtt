@@ -39,15 +39,15 @@ class ECU(APsystemsEZ1M):
         """Check it time is in night"""
         if time is None: time = datetime.now()
         night_start, night_end = self.night()
-        _LOGGER.debug(f'Night start: {night_start}')
-        _LOGGER.debug(f'Night end  : {night_end}')
+        _LOGGER.debug('Night start: %s', night_start.isoformat())
+        _LOGGER.debug('Night end  : %s', night_end.isoformat())
         return (self.stop_at_night and
                 night_start < time.astimezone(self.city.tzinfo) < night_end)
 
 
     def wake_up_time(self):
         """Get wake up time (end of night)"""
-        night_start, night_end = self.night()
+        _, night_end = self.night()
         return night_end
 
 
@@ -74,11 +74,11 @@ class ECU(APsystemsEZ1M):
         :param status: The desired power status for the device, specified as True = ON and False = OFF.
         :return: True when ON, False when OFF, None if request fails
         """
-        _LOGGER.debug(f'Start set_status_power(status={status})')
+        _LOGGER.debug('Start set_status_power(status=%r)', status)
         if status is None:
             return None
 
         status_value = "0" if status is True else "1"
         result = await self.set_device_power_status(status_value)
-        _LOGGER.debug(f'End set_status_power() -> {result}')
+        _LOGGER.debug('End set_status_power() -> %d', result)
         return (result is Status.normal) if result is not None else None

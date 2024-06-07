@@ -9,7 +9,8 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
-from APsystemsEZ1 import ReturnDeviceInfo
+from aiohttp.http_exceptions import HttpBadRequest
+from APsystemsEZ1 import ReturnDeviceInfo, InverterReturnedError
 from APsystemsEZ1mqtt.config import Config
 from APsystemsEZ1mqtt.ecu import ECU
 from APsystemsEZ1mqtt.mqtthandler import MQTTHandler
@@ -33,16 +34,14 @@ def cli_args():
 
 async def async_on_status_power(status: bool):
     """Async callback function for MQTTHandler on_status_power"""
-    global _ecu, _logger, _mqtt
-    _logger.debug(f"Start async_on_status_power(status={status})")
+    _logger.debug("Start async_on_status_power(status=%r)", status)
     status_power = await _ecu.set_status_power(status)
     _mqtt.publish_status_power(status_power)
 
 
 async def async_on_max_power(value: int):
     """Async callback function for MQTTHandler on_max_power"""
-    global _ecu, _logger, _mqtt
-    _logger.debug(f"Start async_on_max_power(value={value})")
+    _logger.debug("Start async_on_max_power(value=%d)", value)
     max_power = await _ecu.set_max_power(value)
     _mqtt.publish_max_power(max_power)
 
@@ -57,7 +56,7 @@ async def periodic_get_data(interval: float):
     """Periodic get output data from ecu"""
     while True:
         now = datetime.now()
-        _logger.debug(f"Start periodic_get_data: {now}")
+        _logger.debug("Start periodic_get_data: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp()
         else:
@@ -65,7 +64,7 @@ async def periodic_get_data(interval: float):
             try:
                 ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
-            except Exception as e:
+            except (InverterReturnedError, HttpBadRequest) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -79,7 +78,7 @@ async def periodic_get_power(interval: float):
     """Periodic get power status from ecu"""
     while True:
         now = datetime.now()
-        _logger.debug(f"Start periodic_get_power: {now}")
+        _logger.debug("Start periodic_get_power: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp() + interval
         else:
@@ -89,7 +88,7 @@ async def periodic_get_power(interval: float):
                 _mqtt.publish_max_power(max_power)
                 status_power = await _ecu.get_status_power()
                 _mqtt.publish_status_power(status_power)
-            except Exception as e:
+            except (InverterReturnedError, HttpBadRequest) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -99,7 +98,7 @@ async def periodic_get_power(interval: float):
 
 async def main():
     """Main application. Does not return. Terminate using <Ctrl>-C."""
-    global _ecu, _logger, _mqtt, _loop
+    global _ecu, _mqtt, _loop  # pylint: disable=global-statement
 
     _loop = asyncio.get_event_loop()
     args = cli_args()
@@ -116,7 +115,7 @@ async def main():
     while ecu_info is None:
         try:
             ecu_info = await _ecu.get_device_info()
-        except Exception:
+        except (InverterReturnedError, HttpBadRequest):
             if args.debug:
                 _logger.info("Can't read APsystems info data. Setting dummy data.")
                 ecu_info = ReturnDeviceInfo(

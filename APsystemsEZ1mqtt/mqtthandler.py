@@ -2,17 +2,17 @@
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
 """Handle MQTT connection and data publishing"""
-import atexit
-import certifi
+from datetime import datetime
 import json
 import logging
 import time
 
-from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
-from APsystemsEZ1mqtt.config import ECUConfig, MQTTConfig
-from datetime import datetime
+import atexit
+import certifi
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.enums import CallbackAPIVersion
+from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
+from APsystemsEZ1mqtt.config import ECUConfig, MQTTConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,7 +22,8 @@ _MAX_RETRY = 10
 # dictionary of MQTT messages and HomA / Home Assistant configuration
 # 'topic' is the last part of the topic that is send
 # 'type', 'room' and 'unit' is needed by HomA
-# 'unit', 'comp' (component part of the discovery topic, do not send topic if None) and 'class' (device_class, do not set if None) is needed by Home Assistant
+# 'unit', 'comp' (component part of the discovery topic, do not send topic if None) and
+# 'class' (device_class, do not set if None) is needed by Home Assistant
 _mqtt_d = {
     'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
@@ -74,7 +75,7 @@ class MQTTHandler:
         _LOGGER.info("Disconnected from MQTT Broker: %s", mqtt_client.error_string(rc))
 
 
-    def on_status_power(self, client, userdata, message: mqtt_client.MQTTMessage):
+    def on_status_power(self, client, userdata, message: mqtt_client.MQTTMessage):  # pylint: disable=unused-argument
         """Callback function on power status change (switch on or off)"""
         _LOGGER.debug("Received `%s` on topic `%s` (qos=%d, retain=%r)", message.payload.decode(), message.topic, message.qos, message.retain)
         status_map = {"0": False, "off": False, "false": False, "1": True, "on": True, "true": True}
@@ -86,7 +87,7 @@ class MQTTHandler:
         self.trigger_async_on_status_power(status)
 
 
-    def on_max_power(self, client, userdata, message: mqtt_client.MQTTMessage):
+    def on_max_power(self, client, userdata, message: mqtt_client.MQTTMessage):  # pylint: disable=unused-argument
         """Callback function on max power change"""
         _LOGGER.debug("Received `%s` on topic `%s` (qos=%d, retain=%r)", message.payload.decode(), message.topic, message.qos, message.retain)
         # create a task in the main event loop
@@ -119,7 +120,7 @@ class MQTTHandler:
         """Create connection to MQTT broker"""
         _LOGGER.debug("Create MQTT client")
         self.client = mqtt_client.Client(CallbackAPIVersion.VERSION1, self.mqtt_config.client_id,
-                                         clean_session=False if self.mqtt_config.client_id else True)
+                                         clean_session=not self.mqtt_config.client_id)
 
         if len(self.mqtt_config.broker_user.strip()) > 0:
             _LOGGER.debug("Connect with user '%s'", self.mqtt_config.broker_user)
@@ -180,7 +181,7 @@ class MQTTHandler:
 
     def publish_max_power(self, max_power: int | None):
         """Publish ECU max power data to MQTT"""
-        _LOGGER.debug(f"Start publish_max_power(max_power={max_power})")
+        _LOGGER.debug("Start publish_max_power(max_power=%d)", max_power)
         self._check_mqtt_connected()
         topic_base = self._get_topic_base()
         if max_power is not None:
@@ -190,7 +191,7 @@ class MQTTHandler:
 
     def publish_status_power(self, status: bool | None):
         """Publish ECU power status to MQTT"""
-        _LOGGER.debug(f"Start publish_status_power(status={status})")
+        _LOGGER.debug("Start publish_status_power(status=%r)", status)
         self._check_mqtt_connected()
         topic_base = self._get_topic_base()
         if status is not None:
@@ -241,7 +242,7 @@ class MQTTHandler:
         # setup controls
         topic_base = self._get_topic_base()
         order = 1
-        for key, homa in _mqtt_d.items():
+        for _, homa in _mqtt_d.items():
             self._publish(self.client, topic_base + homa['topic'] + "/meta/type", homa['type'], self.qos, self.retain)
             self._publish(self.client, topic_base + homa['topic'] + "/meta/order", order, self.qos, self.retain)
             self._publish(self.client, topic_base + homa['topic'] + "/meta/room", homa['room'], self.qos, self.retain)
@@ -270,23 +271,23 @@ class MQTTHandler:
             return
 
         self._check_mqtt_connected()
-        for key, homa in _mqtt_d.items():
-            self._hass_config(homa, ecu_config, ecu_info)
+        for _, item in _mqtt_d.items():
+            self._hass_config(item, ecu_config, ecu_info)
 
 
-    def _hass_config(self, dict, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
+    def _hass_config(self, mqtt_d_item, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         """Send a single Home Assistant config message to enable discovery"""
-        if dict['comp'] is None:
+        if mqtt_d_item['comp'] is None:
             return
 
-        object_id = self.mqtt_config.hass_device_id + "-" + str(dict['topic']).replace(" ", "-")
-        state_topic = self._get_topic_base() + dict['topic']
+        object_id = self.mqtt_config.hass_device_id + "-" + str(mqtt_d_item['topic']).replace(" ", "-")
+        state_topic = self._get_topic_base() + mqtt_d_item['topic']
 
         # topic: <discovery_prefix>/<component>/[<node_id>/]<object_id>/config
-        topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
+        topic = "/".join(["homeassistant", mqtt_d_item['comp'], object_id, "config"])
 
         payload = {
-            "name":self.mqtt_config.hass_name_prefix + dict['topic'],
+            "name":self.mqtt_config.hass_name_prefix + mqtt_d_item['topic'],
             "state_topic":state_topic,
             "unique_id":object_id,
             "object_id":object_id,
@@ -302,37 +303,37 @@ class MQTTHandler:
             }
         }
         # add unit, if there is one
-        if dict['unit']:
-            payload['unit_of_measurement'] = str(dict['unit']).strip()
+        if mqtt_d_item['unit']:
+            payload['unit_of_measurement'] = str(mqtt_d_item['unit']).strip()
 
         # special handling depending on dict['comp']
-        if dict['comp'] == "number":
-            if dict['class']: payload['device_class'] = dict['class']
+        if mqtt_d_item['comp'] == "number":
+            if mqtt_d_item['class']: payload['device_class'] = mqtt_d_item['class']
             payload['command_topic'] = state_topic + "/on"
             #payload['mode'] = "box"
             #payload['icon'] = "mdi:lightning-bolt-outline"
-            if 'min' in dict and dict['min']: payload['min'] = dict['min']
-            if 'max' in dict and dict['max']: payload['max'] = dict['max']
-        elif dict['comp'] == "switch":
+            if 'min' in mqtt_d_item and mqtt_d_item['min']: payload['min'] = mqtt_d_item['min']
+            if 'max' in mqtt_d_item and mqtt_d_item['max']: payload['max'] = mqtt_d_item['max']
+        elif mqtt_d_item['comp'] == "switch":
             payload['command_topic'] = state_topic + "/on"
             payload['payload_off'] = "0"
             payload['payload_on'] = "1"
-        elif dict['comp'] == "sensor":
-            if dict['class'] in ["energy", "power"]:
-                payload['device_class'] = dict['class']
+        elif mqtt_d_item['comp'] == "sensor":
+            if mqtt_d_item['class'] in ["energy", "power"]:
+                payload['device_class'] = mqtt_d_item['class']
                 payload['state_class'] = "measurement"
-            elif dict['class'] == "_energy_total":
+            elif mqtt_d_item['class'] == "_energy_total":
                 payload['device_class'] = "energy"
                 payload['state_class'] = "total"
-            elif dict['class'] == "_energy_increasing":
+            elif mqtt_d_item['class'] == "_energy_increasing":
                 payload['device_class'] = "energy"
                 payload['state_class'] = "total_increasing"
-            elif dict['class'] == "_datetime":
+            elif mqtt_d_item['class'] == "_datetime":
                 #payload['device_class'] = "date" # do not set date class, as output cuts time
                 payload['value_template'] = "{{ as_datetime(value) }}"
                 payload['icon'] = "mdi:calendar-arrow-right"
-            elif dict['class']:
-                payload['device_class'] = dict['class']
+            elif mqtt_d_item['class']:
+                payload['device_class'] = mqtt_d_item['class']
 
         self._publish(self.client, topic, json.dumps(payload), self.qos, self.retain)
 
@@ -351,18 +352,18 @@ class MQTTHandler:
         self._publish(self.client, homa_base + "meta/room", None, self.qos, self.retain)
 
         homa_base += "controls/" # e.g. "/devices/123456-solar/controls/"
-        for key, dict in _mqtt_d.items():
-            self._publish(self.client, topic_base + dict['topic'], None, self.qos, self.retain)
-            self._publish(self.client, homa_base + dict['topic'], None, self.qos, self.retain)
-            self._publish(self.client, homa_base + dict['topic'] + "/meta/type", None, self.qos, self.retain)
-            self._publish(self.client, homa_base + dict['topic'] + "/meta/order", None, self.qos, self.retain)
-            self._publish(self.client, homa_base + dict['topic'] + "/meta/room", None, self.qos, self.retain)
-            self._publish(self.client, homa_base + dict['topic'] + "/meta/unit", None, self.qos, self.retain)
+        for _, item in _mqtt_d.items():
+            self._publish(self.client, topic_base + item['topic'], None, self.qos, self.retain)
+            self._publish(self.client, homa_base + item['topic'], None, self.qos, self.retain)
+            self._publish(self.client, homa_base + item['topic'] + "/meta/type", None, self.qos, self.retain)
+            self._publish(self.client, homa_base + item['topic'] + "/meta/order", None, self.qos, self.retain)
+            self._publish(self.client, homa_base + item['topic'] + "/meta/room", None, self.qos, self.retain)
+            self._publish(self.client, homa_base + item['topic'] + "/meta/unit", None, self.qos, self.retain)
 
             # clear Home Assistant config topics
-            if dict['comp']:
-                object_id = self.mqtt_config.hass_device_id + "-" + str(dict['topic']).replace(" ", "-")
-                hass_topic = "/".join(["homeassistant", dict['comp'], object_id, "config"])
+            if item['comp']:
+                object_id = self.mqtt_config.hass_device_id + "-" + str(item['topic']).replace(" ", "-")
+                hass_topic = "/".join(["homeassistant", item['comp'], object_id, "config"])
                 self._publish(self.client, hass_topic, None, self.qos, self.retain)
 
         _LOGGER.info("All MQTT topics cleared.")
