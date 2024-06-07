@@ -277,6 +277,7 @@ class MQTTHandler:
 
     def _hass_config(self, mqtt_d_item, ecu_config: ECUConfig, ecu_info: ReturnDeviceInfo):
         """Send a single Home Assistant config message to enable discovery"""
+        # pylint: disable=too-many-branches
         if mqtt_d_item['comp'] is None:
             return
 

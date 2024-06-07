@@ -1,6 +1,8 @@
 # Author: Holger Mueller <github euhm.de>
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
+# pylint: disable=too-many-instance-attributes, too-few-public-methods
+
 """Application config classes, can be set by file or env variable"""
 import os
 import yaml
