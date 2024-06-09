@@ -45,7 +45,7 @@ poetry install
 
 Start it
 ``` sh
-python3 -m APsystemsEZ1mqtt -h
+python3 -m apsystems_ez1_mqtt -h
 ```
 
 ### Run as a service
@@ -61,7 +61,7 @@ After=multi-user.target
 Type=simple
 User=user
 Restart=on-failure
-ExecStart=/path-to-your-venv/python3 -m APsystemsEZ1mqtt -c config.yaml
+ExecStart=/path-to-your-venv/python3 -m apsystems_ez1_mqtt -c config.yaml
 
 [Install]
 WantedBy=multi-user.target

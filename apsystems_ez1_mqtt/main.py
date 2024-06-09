@@ -11,9 +11,9 @@ from datetime import datetime, timedelta
 
 from aiohttp.http_exceptions import HttpBadRequest
 from APsystemsEZ1 import ReturnDeviceInfo, InverterReturnedError
-from APsystemsEZ1mqtt.config import Config
-from APsystemsEZ1mqtt.ecu import ECU
-from APsystemsEZ1mqtt.mqtthandler import MQTTHandler
+from apsystems_ez1_mqtt.config import Config
+from apsystems_ez1_mqtt.ecu import ECU
+from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
 
 _ecu: ECU
 _logger = logging.getLogger(__name__)

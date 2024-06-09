@@ -5,7 +5,6 @@ description = "APsystems EZ1 inverter local API gateway to MQTT, HomA and Home A
 authors = ["Holger Mueller <github@euhm.de>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "APsystemsEZ1mqtt"}]
 include = ["config-template.yaml"]
 
 [tool.poetry.dependencies]

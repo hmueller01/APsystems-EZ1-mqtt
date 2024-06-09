@@ -12,7 +12,7 @@ import certifi
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.enums import CallbackAPIVersion
 from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
-from APsystemsEZ1mqtt.config import ECUConfig, MQTTConfig
+from apsystems_ez1_mqtt.config import ECUConfig, MQTTConfig
 
 _LOGGER = logging.getLogger(__name__)
 
