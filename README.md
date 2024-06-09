@@ -1,6 +1,6 @@
 [![Maintenance badge](https://img.shields.io/maintenance/yes/2024)](https://github.com/hmueller01/APsystems-EZ1-mqtt)
 [![Release badge](https://img.shields.io/github/v/release/hmueller01/APsystems-EZ1-mqtt)](https://github.com/hmueller01/APsystems-EZ1-mqtt/releases)
-[![Pylint](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml/badge.svg?event=pull_request)](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml)
+[![Pylint](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml/badge.svg??event=push)](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml)
 
 # APsystems EZ1 MQTT gateway
 
