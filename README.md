@@ -2,9 +2,21 @@
 [![Release badge](https://img.shields.io/github/v/release/hmueller01/APsystems-EZ1-mqtt)](https://github.com/hmueller01/APsystems-EZ1-mqtt/releases)
 [![Pylint](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml/badge.svg)](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml)
 
-# APsystems EZ1 MQTT gateway
+# APsystems EZ1 MQTT gateway <!-- omit from toc -->
 
 This component is a Python package to gateway [APsystems](https://apsystems.com/) EZ1 inverter local API to MQTT, [HomA](https://github.com/binarybucks/homA) and [Home Assistant](https://www.home-assistant.io).
+
+- [Acknowledgements](#acknowledgements)
+- [Basic Requirements](#basic-requirements)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+	- [Run as a service](#run-as-a-service)
+- [Configuration](#configuration)
+	- [ECU](#ecu)
+	- [MQTT](#mqtt)
+	- [Timezone](#timezone)
+- [MQTT topics](#mqtt-topics)
+- [Changelog](#changelog)
 
 
 ## Acknowledgements
@@ -120,7 +132,6 @@ If you do not need [Home Assistant](https://www.home-assistant.io) you can set `
 Without any specific configuration, APsystems-EZ1-mqtt uses your system's timezone as a reference.
 
 * It is recommented setting the timezone by the configuration variable `APS_ECU_TIMEZONE` for better processing.
-
 * Alternatively, if set, the environement variable `TZ` is used.
 
 ## MQTT topics
@@ -138,3 +149,9 @@ The APsystems-EZ1-mqtt topics depend on the configuration. If HomA is deactivate
 * [topic start]Energy lifetime P2 - channel 2 lifetime amount of energy (in kWh) generated
 
 If Home Assistant is enabled (`HASS_ENABLED: True`) Home Assistant auto config messages will be generated, like: "homeassistant/sensor/[object_id]/config"
+
+## Changelog
+
+| Version | Date       | Author     | Comment        |
+| :------ | :--------- | :--------- | :------------- |
+| 0.1.0   | 2024-06-18 | hmueller01 | Inital version |
