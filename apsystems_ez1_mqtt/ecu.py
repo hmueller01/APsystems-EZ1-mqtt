@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from APsystemsEZ1 import APsystemsEZ1M, Status
 from astral import LocationInfo
 from astral.sun import daylight
+from apsystems_ez1_mqtt.config import ECUConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +19,12 @@ class ECU(APsystemsEZ1M):
     Extend class APsystemsEZ1M by night information and boolean OnOff power status
     """
 
-    def __init__(self, ecu_config, timeout: int = 10):
+    def __init__(self, ecu_config: ECUConfig, timeout: int = None):
+        min_timeout: int = 2
+        if not timeout:
+            timeout = 10 if ecu_config.update_interval > 10 else ecu_config.update_interval
+        if timeout <= min_timeout:
+            raise ValueError(f"timeout {timeout} too low, must be > {min_timeout}")
         super().__init__(ecu_config.ipaddr, ecu_config.port, timeout)
         self.stop_at_night = ecu_config.stop_at_night
         if self.stop_at_night:
