@@ -64,7 +64,7 @@ async def periodic_get_data(interval: float):
             try:
                 ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
-            except (InverterReturnedError, HttpBadRequest) as e:
+            except (InverterReturnedError, HttpBadRequest, TimeoutError) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -88,7 +88,7 @@ async def periodic_get_power(interval: float):
                 _mqtt.publish_max_power(max_power)
                 status_power = await _ecu.get_status_power()
                 _mqtt.publish_status_power(status_power)
-            except (InverterReturnedError, HttpBadRequest) as e:
+            except (InverterReturnedError, HttpBadRequest, TimeoutError) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -115,7 +115,7 @@ async def main():
     while ecu_info is None:
         try:
             ecu_info = await _ecu.get_device_info()
-        except (InverterReturnedError, HttpBadRequest):
+        except (InverterReturnedError, HttpBadRequest, TimeoutError):
             if args.debug:
                 _logger.info("Can't read APsystems info data. Setting dummy data.")
                 ecu_info = ReturnDeviceInfo(
