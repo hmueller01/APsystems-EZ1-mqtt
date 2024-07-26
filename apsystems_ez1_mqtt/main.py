@@ -115,7 +115,7 @@ async def main():
     while ecu_info is None:
         try:
             ecu_info = await _ecu.get_device_info()
-        except (InverterReturnedError, HttpBadRequest, TimeoutError):
+        except Exception:  # pylint: disable=broad-exception-caught
             if args.debug:
                 _logger.info("Can't read APsystems info data. Setting dummy data.")
                 ecu_info = ReturnDeviceInfo(
