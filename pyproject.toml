@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apsystems-ez1-mqtt"
-version = "0.1.0"
+version = "0.2.0"
 description = "APsystems EZ1 inverter local API gateway to MQTT, HomA and Home Assistant"
 authors = ["Holger Mueller <github@euhm.de>"]
 license = "MIT"
