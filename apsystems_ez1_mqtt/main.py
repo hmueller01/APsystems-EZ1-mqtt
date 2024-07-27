@@ -1,6 +1,8 @@
 # Author: Holger Mueller <github euhm.de>
 # Based on aps2mqtt by Florian L., https://github.com/fligneul/aps2mqtt
 
+# pylint: disable=broad-exception-caught
+
 """Query APsystems EZ1 inverter data periodically and send them to the MQTT broker"""
 import asyncio
 import logging
@@ -9,8 +11,7 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
-from aiohttp.http_exceptions import HttpBadRequest
-from APsystemsEZ1 import ReturnDeviceInfo, InverterReturnedError
+from APsystemsEZ1 import ReturnDeviceInfo
 from apsystems_ez1_mqtt.config import Config
 from apsystems_ez1_mqtt.ecu import ECU
 from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
@@ -64,7 +65,7 @@ async def periodic_get_data(interval: float):
             try:
                 ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
-            except (InverterReturnedError, HttpBadRequest, TimeoutError) as e:
+            except (Exception) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -88,7 +89,7 @@ async def periodic_get_power(interval: float):
                 _mqtt.publish_max_power(max_power)
                 status_power = await _ecu.get_status_power()
                 _mqtt.publish_status_power(status_power)
-            except (InverterReturnedError, HttpBadRequest, TimeoutError) as e:
+            except (Exception) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -115,7 +116,7 @@ async def main():
     while ecu_info is None:
         try:
             ecu_info = await _ecu.get_device_info()
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception:
             if args.debug:
                 _logger.info("Can't read APsystems info data. Setting dummy data.")
                 ecu_info = ReturnDeviceInfo(
