@@ -36,7 +36,7 @@ def cli_args():
 async def async_on_status_power(status: bool):
     """Async callback function for MQTTHandler on_status_power"""
     _logger.debug("Start async_on_status_power(status=%r)", status)
-    status_power = await _ecu.set_status_power(status)
+    status_power = await _ecu.set_device_power_status(status)
     _mqtt.publish_status_power(status_power)
 
 
@@ -87,7 +87,7 @@ async def periodic_get_power(interval: float):
             try:
                 max_power = await _ecu.get_max_power()
                 _mqtt.publish_max_power(max_power)
-                status_power = await _ecu.get_status_power()
+                status_power = await _ecu.get_device_power_status()
                 _mqtt.publish_status_power(status_power)
             except (Exception) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
