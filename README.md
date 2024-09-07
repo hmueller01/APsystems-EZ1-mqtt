@@ -152,7 +152,8 @@ If Home Assistant is enabled (`HASS_ENABLED: True`) Home Assistant auto config m
 
 ## Changelog
 
-| Version | Date       | Author     | Comment            |
-| :------ | :--------- | :--------- | :----------------- |
-| 0.1.0   | 2024-06-18 | hmueller01 | Inital version     |
-| 0.2.0   | 2024-07-25 | hmueller01 | fix timeout issues |
+| Version | Date       | Author     | Comment                              |
+| :------ | :--------- | :--------- | :----------------------------------- |
+| 0.1.0   | 2024-06-18 | hmueller01 | Inital version                       |
+| 0.2.0   | 2024-07-25 | hmueller01 | fix timeout issues                   |
+| 0.3.0   | 2024-09-07 | hmueller01 | migrated to new APsystemsEZ1 2.x API |
