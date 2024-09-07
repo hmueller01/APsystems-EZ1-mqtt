@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apsystems-ez1-mqtt"
-version = "0.2.0"
+version = "0.3.0"
 description = "APsystems EZ1 inverter local API gateway to MQTT, HomA and Home Assistant"
 authors = ["Holger Mueller <github@euhm.de>"]
 license = "MIT"
@@ -9,7 +9,6 @@ include = ["config-template.yaml"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-#apsystems-ez1 = "^1.3.1"
 apsystems-ez1 = "^2.3.0"
 paho-mqtt = "^2.1.0"
 certifi = "^2024.2.2"
