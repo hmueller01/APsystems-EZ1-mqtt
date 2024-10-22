@@ -25,7 +25,7 @@ class ECU(APsystemsEZ1M):
             timeout = 10 if ecu_config.update_interval > 10 else ecu_config.update_interval
         if timeout <= min_timeout:
             raise ValueError(f"timeout {timeout} too low, must be > {min_timeout}")
-        super().__init__(ecu_config.ipaddr, ecu_config.port, timeout)
+        super().__init__(ecu_config.ipaddr, ecu_config.port, timeout, enable_debounce=True)
         self.stop_at_night = ecu_config.stop_at_night
         if self.stop_at_night:
             self.city = LocationInfo("", "",
