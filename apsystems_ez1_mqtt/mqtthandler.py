@@ -46,7 +46,7 @@ _mqtt_d = {
 class MQTTHandler:
     """Handle MQTT connection to broker and publish message"""
 
-    def __init__(self, trigger_on_status_power, trigger_async_on_max_power, mqtt_config: MQTTConfig, qos: int = 1, retain = False):
+    def __init__(self, trigger_on_status_power, trigger_async_on_max_power, mqtt_config: MQTTConfig, *, qos: int = 1, retain = False):
         self.mqtt_config = mqtt_config
         self.qos = qos
         self.retain = retain
@@ -94,7 +94,7 @@ class MQTTHandler:
         self.trigger_async_on_max_power(int(message.payload.decode()))
 
 
-    def _publish(self, client, topic: str, msg: mqtt_client.PayloadType, qos: int = 0, retain: bool = False):
+    def _publish(self, client, topic: str, msg: mqtt_client.PayloadType, qos: int = 0, retain: bool = False):  # pylint: disable=too-many-positional-arguments
         result = client.publish(topic, msg, qos, retain)
         status = result[0]
         if status == 0:
