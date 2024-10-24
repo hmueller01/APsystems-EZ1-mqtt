@@ -251,8 +251,11 @@ valid-metaclass-classmethod-first-arg = ["mcs"]
 # List of qualified class names to ignore when counting class parents (see R0901)
 # ignored-parents =
 
-# Maximum number of arguments for function / method.
+# Maximum number of arguments for function / method (see R0913).
 max-args = 7
+
+# Maximum number of positional arguments for function (see R0917).
+max-positional-arguments=5
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes = 7
