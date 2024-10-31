@@ -155,8 +155,10 @@ async def main():
         periodic_get_data(conf.ecu_config.update_interval),
         periodic_get_power(600), # 10min update interval
     )
+    _logger.info("main() ended.")
 
 
 if __name__ == "__main__":
     # This is the entry point of the script and it runs the main function in an asynchronous manner (coroutine).
     asyncio.run(main())
+    _logger.info("run(main()) terminated!")
