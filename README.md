@@ -159,3 +159,4 @@ If Home Assistant is enabled (`HASS_ENABLED: True`) Home Assistant auto config m
 | 0.3.0   | 2024-09-07 | hmueller01 | migrated to new APsystemsEZ1 2.x API              |
 | 0.4.0   | 2024-10-21 | hmueller01 | added APsystemsEZ1 2.4 API enable_debounce=True   |
 | 0.4.1   | 2024-11-03 | hmueller01 | switch from asyncio.gather() to async TaskGroup() |
+| 0.4.2   | 2025-02-16 | hmueller01 | updated to APsystemsEZ1 API 2.5.0                 |
