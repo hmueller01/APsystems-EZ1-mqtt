@@ -126,7 +126,8 @@ async def main():
                     ssid='debug dummy ssid',
                     ipAddr='192.168.9.9',
                     minPower=int(30),
-                    maxPower=int(800))
+                    maxPower=int(800),
+                    isBatterySystem=False)
             else:
                 _logger.error("Can't read APsystems info data. Waiting for a minute ...")
                 await asyncio.sleep(60)
