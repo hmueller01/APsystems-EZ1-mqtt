@@ -9,6 +9,7 @@ import logging
 import sys
 
 from argparse import ArgumentParser
+from asyncio import TaskGroup
 from datetime import datetime, timedelta
 
 from APsystemsEZ1 import ReturnDeviceInfo
@@ -125,7 +126,8 @@ async def main():
                     ssid='debug dummy ssid',
                     ipAddr='192.168.9.9',
                     minPower=int(30),
-                    maxPower=int(800))
+                    maxPower=int(800),
+                    isBatterySystem=False)
             else:
                 _logger.error("Can't read APsystems info data. Waiting for a minute ...")
                 await asyncio.sleep(60)
@@ -149,12 +151,15 @@ async def main():
     _mqtt.hass_init(conf.ecu_config, ecu_info) # must init before homa_init
     _mqtt.homa_init(ecu_info, _ecu.city.tzinfo)
 
-    _logger.info("Started all periodic tasks. Press <Ctrl>-C to terminate.")
-    await asyncio.gather(
-        periodic_wakeup(),
-        periodic_get_data(conf.ecu_config.update_interval),
-        periodic_get_power(600), # 10min update interval
-    )
+    _logger.info("Starting all periodic tasks. Press <Ctrl>-C to terminate.")
+    try:
+        async with TaskGroup() as group:
+            # spawn tasks
+            group.create_task(periodic_wakeup())
+            group.create_task(periodic_get_data(conf.ecu_config.update_interval))
+            group.create_task(periodic_get_power(600)) # 10min update interval
+    except (Exception) as e:
+        _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
     _logger.info("main() ended.")
 
 
