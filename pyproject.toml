@@ -9,9 +9,9 @@ include = ["config-template.yaml"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-apsystems-ez1 = "^2.5.0"
+apsystems-ez1 = "^2.6.0"
 paho-mqtt = "^2.1.0"
-certifi = "^2024.2.2"
+certifi = "^2025.4.26"
 pyyaml = "^6.0.1"
 str2bool = "^1.1"
 astral = "^3.2"
