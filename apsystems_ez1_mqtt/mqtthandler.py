@@ -217,9 +217,9 @@ class MQTTHandler:
         """
         output = {}
         topic_base = self._get_topic_base()
-        output[topic_base + _mqtt_d['pt']['topic']] = f'{(data.p1 + data.p2):d}'
-        output[topic_base + _mqtt_d['p1']['topic']] = f'{data.p1:d}'
-        output[topic_base + _mqtt_d['p2']['topic']] = f'{data.p2:d}'
+        output[topic_base + _mqtt_d['pt']['topic']] = f'{(data.p1 + data.p2):0.0f}'
+        output[topic_base + _mqtt_d['p1']['topic']] = f'{data.p1:0.0f}'
+        output[topic_base + _mqtt_d['p2']['topic']] = f'{data.p2:0.0f}'
         output[topic_base + _mqtt_d['et']['topic']] = f'{(data.e1 + data.e2):0.3f}'
         output[topic_base + _mqtt_d['e1']['topic']] = f'{data.e1:0.3f}'
         output[topic_base + _mqtt_d['e2']['topic']] = f'{data.e2:0.3f}'
