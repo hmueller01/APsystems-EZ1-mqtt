@@ -28,9 +28,9 @@ _mqtt_d = {
     'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
-    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
-    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
-    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': 'energy'},
+    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
@@ -320,7 +320,7 @@ class MQTTHandler:
             payload['payload_off'] = "0"
             payload['payload_on'] = "1"
         elif mqtt_d_item['comp'] == "sensor":
-            if mqtt_d_item['class'] in ["energy", "power"]:
+            if mqtt_d_item['class'] in ["power"]:
                 payload['device_class'] = mqtt_d_item['class']
                 payload['state_class'] = "measurement"
             elif mqtt_d_item['class'] == "_energy_total":
