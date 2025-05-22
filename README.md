@@ -160,4 +160,5 @@ If Home Assistant is enabled (`HASS_ENABLED: True`) Home Assistant auto config m
 | 0.4.0   | 2024-10-21 | hmueller01 | added APsystemsEZ1 2.4 API enable_debounce=True                        |
 | 0.4.1   | 2024-11-03 | hmueller01 | switch from asyncio.gather() to async TaskGroup()                      |
 | 0.4.2   | 2025-02-16 | hmueller01 | updated to APsystemsEZ1 API 2.5.0                                      |
-| 0.4.3   | 2025-05-04 | hmueller01 | updated to APsystemsEZ1 API 2.6.0, fixed execption at float conversion |
+| 0.4.3   | 2025-05-04 | hmueller01 | updated to APsystemsEZ1 API 2.6.0, fixed exception at float conversion |
+| 0.4.4   | 2025-05-22 | hmueller01 | fixed HASS device_class energy state_class warning                     |
