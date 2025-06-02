@@ -5,6 +5,7 @@
 import logging
 
 from datetime import datetime, timedelta
+from typing import Optional
 
 from APsystemsEZ1 import APsystemsEZ1M
 from astral import LocationInfo
@@ -19,7 +20,7 @@ class ECU(APsystemsEZ1M):
     Extend class APsystemsEZ1M by night information and boolean OnOff power status
     """
 
-    def __init__(self, ecu_config: ECUConfig, timeout: int = None):
+    def __init__(self, ecu_config: ECUConfig, timeout: Optional[int] = None):
         min_timeout: int = 2
         if not timeout:
             timeout = 10 if ecu_config.update_interval > 10 else ecu_config.update_interval
@@ -39,8 +40,7 @@ class ECU(APsystemsEZ1M):
         night_end += timedelta(days=1)
         return night_start, night_end
 
-
-    def is_night(self, time: datetime = None):
+    def is_night(self, time: Optional[datetime] = None):
         """Check it time is in night"""
         if time is None: time = datetime.now()
         night_start, night_end = self.night()
