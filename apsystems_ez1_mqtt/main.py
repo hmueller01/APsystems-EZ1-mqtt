@@ -11,8 +11,9 @@ import sys
 from argparse import ArgumentParser
 from asyncio import TaskGroup
 from datetime import datetime, timedelta
+from typing import Optional
 
-from APsystemsEZ1 import ReturnDeviceInfo
+from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
 from apsystems_ez1_mqtt.config import Config
 from apsystems_ez1_mqtt.ecu import ECU
 from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
@@ -56,6 +57,8 @@ async def periodic_wakeup():
 
 async def periodic_get_data(interval: float):
     """Periodic get output data from ecu"""
+    last_data: Optional[ReturnOutputData] = None
+    _logger.debug("Start periodic_get_data with interval: %0.2fs", interval)
     while True:
         now = datetime.now()
         _logger.debug("Start periodic_get_data: %s", now.isoformat())
@@ -66,8 +69,17 @@ async def periodic_get_data(interval: float):
             try:
                 ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
+                last_data = ecu_data
             except (Exception) as e:
                 _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
+                if last_data is not None:
+                    # reset power data to 0 if we got no data
+                    last_data.p1 = last_data.p2 = 0
+                    if now.hour == 0 and now.minute == 0:
+                        # if we are at midnight, reset energy data
+                        last_data.e1 = last_data.e2 = 0
+                    _logger.debug("Using last data: %s", last_data)
+                    _mqtt.publish_data(last_data)
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
         # compensate code runtime
