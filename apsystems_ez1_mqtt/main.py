@@ -60,7 +60,7 @@ async def periodic_get_data(interval: float):
     last_data: Optional[ReturnOutputData] = None
     _logger.debug("Start periodic_get_data with interval: %0.2fs", interval)
     while True:
-        now = datetime.now()
+        now = datetime.now(_ecu.city.tzinfo)
         _logger.debug("Start periodic_get_data: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp()
@@ -83,7 +83,7 @@ async def periodic_get_data(interval: float):
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
         # compensate code runtime
-        sleeptime = max(0, sleeptime - (datetime.now().timestamp() - now.timestamp()))
+        sleeptime = max(0, sleeptime - (datetime.now(_ecu.city.tzinfo).timestamp() - now.timestamp()))
         _logger.debug("Next update at: %s (in %0.2fs)", next_update_time, sleeptime)
         await asyncio.sleep(sleeptime)
 
@@ -91,7 +91,7 @@ async def periodic_get_data(interval: float):
 async def periodic_get_power(interval: float):
     """Periodic get power status from ecu"""
     while True:
-        now = datetime.now()
+        now = datetime.now(_ecu.city.tzinfo)
         _logger.debug("Start periodic_get_power: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp() + interval
