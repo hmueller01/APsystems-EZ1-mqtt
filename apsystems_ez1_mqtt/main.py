@@ -13,9 +13,9 @@ from asyncio import TaskGroup
 from datetime import datetime, timedelta
 from typing import Optional
 
-from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
+from APsystemsEZ1 import ReturnDeviceInfo
 from apsystems_ez1_mqtt.config import Config
-from apsystems_ez1_mqtt.ecu import ECU
+from apsystems_ez1_mqtt.ecu import ECU, OutputData
 from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
 
 _ecu: ECU
@@ -57,7 +57,7 @@ async def periodic_wakeup():
 
 async def periodic_get_data(interval: float):
     """Periodic get output data from ecu"""
-    last_data: Optional[ReturnOutputData] = None
+    last_data: Optional[OutputData] = None
     exception_count = 0
     _logger.debug("Start periodic_get_data with interval: %0.2fs", interval)
     while True:
@@ -68,7 +68,7 @@ async def periodic_get_data(interval: float):
         else:
             sleeptime = interval
             try:
-                ecu_data = await _ecu.get_output_data()
+                ecu_data = await _ecu.get_output_data_ext()
                 _mqtt.publish_data(ecu_data)
                 last_data = ecu_data
                 exception_count = 0
