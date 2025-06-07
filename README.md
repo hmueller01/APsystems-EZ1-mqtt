@@ -162,3 +162,4 @@ If Home Assistant is enabled (`HASS_ENABLED: True`) Home Assistant auto config m
 | 0.4.2   | 2025-02-16 | hmueller01 | updated to APsystemsEZ1 API 2.5.0                                      |
 | 0.4.3   | 2025-05-04 | hmueller01 | updated to APsystemsEZ1 API 2.6.0, fixed exception at float conversion |
 | 0.4.4   | 2025-05-22 | hmueller01 | fixed HASS device_class energy state_class warning                     |
+| 0.4.5   | 2025-06-02 | hmueller01 | fix power output (0W) if inverter is offline (no answer)               |

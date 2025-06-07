@@ -45,9 +45,8 @@ class ECUConfig:
         self.update_interval = int(cfg.get("APS_ECU_UPDATE_INTERVAL", 15))
         self.timezone = cfg.get("APS_ECU_TIMEZONE", os.getenv("TZ", None))
         self.stop_at_night = str2bool_exc(str(cfg.get("APS_ECU_STOP_AT_NIGHT", "f")))
-        if self.stop_at_night:
-            self.ecu_position_latitude = float(cfg.get("APS_ECU_POSITION_LAT", 52.5162))
-            self.ecu_position_longitude = float(cfg.get("APS_ECU_POSITION_LNG", 13.3777))
+        self.ecu_position_latitude = float(cfg.get("APS_ECU_POSITION_LAT", 52.5162))
+        self.ecu_position_longitude = float(cfg.get("APS_ECU_POSITION_LNG", 13.3777))
 
 
 class Config:

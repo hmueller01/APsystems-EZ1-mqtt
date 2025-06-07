@@ -168,6 +168,9 @@ class MQTTHandler:
 
     def _check_mqtt_connected(self):
         """Check MQTT broker connection"""
+        if self.client is None:
+            _LOGGER.warning("MQTT client is not initialized")
+            raise ConnectionError("MQTT client not initialized")
         retry_count = 0
         while not self.client.is_connected() and retry_count < _MAX_RETRY:
             _LOGGER.debug("MQTT client not connected...")

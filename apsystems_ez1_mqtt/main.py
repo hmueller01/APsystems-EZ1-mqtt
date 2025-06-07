@@ -11,8 +11,9 @@ import sys
 from argparse import ArgumentParser
 from asyncio import TaskGroup
 from datetime import datetime, timedelta
+from typing import Optional
 
-from APsystemsEZ1 import ReturnDeviceInfo
+from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
 from apsystems_ez1_mqtt.config import Config
 from apsystems_ez1_mqtt.ecu import ECU
 from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
@@ -56,8 +57,11 @@ async def periodic_wakeup():
 
 async def periodic_get_data(interval: float):
     """Periodic get output data from ecu"""
+    last_data: Optional[ReturnOutputData] = None
+    exception_count = 0
+    _logger.debug("Start periodic_get_data with interval: %0.2fs", interval)
     while True:
-        now = datetime.now()
+        now = datetime.now(_ecu.city.tzinfo)
         _logger.debug("Start periodic_get_data: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp()
@@ -66,12 +70,20 @@ async def periodic_get_data(interval: float):
             try:
                 ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
-            except (Exception) as e:
-                _logger.error("An exception occured: %s -> %s", e.__class__.__name__, str(e))
+                last_data = ecu_data
+                exception_count = 0
+            except Exception:
+                exception_count += 1
+                if exception_count > 4 and last_data is not None:
+                    # reset power data to 0 if we got no data 5 times in a row
+                    # this is needed to avoid that the last power data is used forever but power is actually 0
+                    last_data.p1 = last_data.p2 = 0
+                    _logger.debug("No data received for 5 times in a row, using last data: %s", last_data)
+                    _mqtt.publish_data(last_data)
 
         next_update_time = (now.astimezone(_ecu.city.tzinfo) + timedelta(0, sleeptime)).strftime("%Y-%m-%d %H:%M:%S %Z")
         # compensate code runtime
-        sleeptime = max(0, sleeptime - (datetime.now().timestamp() - now.timestamp()))
+        sleeptime = max(0, sleeptime - (datetime.now(_ecu.city.tzinfo).timestamp() - now.timestamp()))
         _logger.debug("Next update at: %s (in %0.2fs)", next_update_time, sleeptime)
         await asyncio.sleep(sleeptime)
 
@@ -79,7 +91,7 @@ async def periodic_get_data(interval: float):
 async def periodic_get_power(interval: float):
     """Periodic get power status from ecu"""
     while True:
-        now = datetime.now()
+        now = datetime.now(_ecu.city.tzinfo)
         _logger.debug("Start periodic_get_power: %s", now.isoformat())
         if _ecu.is_night(now):
             sleeptime = _ecu.wake_up_time().timestamp() - now.timestamp() + interval
