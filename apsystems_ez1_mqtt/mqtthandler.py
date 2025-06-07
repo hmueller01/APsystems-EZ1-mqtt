@@ -11,8 +11,9 @@ import atexit
 import certifi
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.enums import CallbackAPIVersion
-from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
+from APsystemsEZ1 import ReturnDeviceInfo
 from apsystems_ez1_mqtt.config import ECUConfig, MQTTConfig
+from apsystems_ez1_mqtt.ecu import OutputData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,9 +29,12 @@ _mqtt_d = {
     'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
-    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
-    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
-    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'et': {'topic': 'Energy start',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e1': {'topic': 'Energy start P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e2': {'topic': 'Energy start P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'dt': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'd1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'd2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
@@ -202,7 +206,7 @@ class MQTTHandler:
                           "1" if status else "0", self.qos, self.retain)
 
 
-    def publish_data(self, data):
+    def publish_data(self, data: OutputData | None):
         """Publish ECU data to MQTT"""
         _LOGGER.debug("Start MQTT publish")
         self._check_mqtt_connected()
@@ -213,7 +217,7 @@ class MQTTHandler:
             _LOGGER.debug("MQTT values published")
 
 
-    def _parse_data(self, data: ReturnOutputData):
+    def _parse_data(self, data: OutputData):
         """
         Parse data from APsystemsEZ1 ReturnOutputData
         The data include power output status ('p1', 'p2'), energy readings ('e1', 'e2'), and total energy ('te1', 'te2')
@@ -226,6 +230,9 @@ class MQTTHandler:
         output[topic_base + _mqtt_d['et']['topic']] = f'{(data.e1 + data.e2):0.3f}'
         output[topic_base + _mqtt_d['e1']['topic']] = f'{data.e1:0.3f}'
         output[topic_base + _mqtt_d['e2']['topic']] = f'{data.e2:0.3f}'
+        output[topic_base + _mqtt_d['dt']['topic']] = f'{(data.d1 + data.d2):0.3f}'
+        output[topic_base + _mqtt_d['d1']['topic']] = f'{data.d1:0.3f}'
+        output[topic_base + _mqtt_d['d2']['topic']] = f'{data.d2:0.3f}'
         output[topic_base + _mqtt_d['lt']['topic']] = f'{(data.te1 + data.te2):0.2f}'
         output[topic_base + _mqtt_d['l1']['topic']] = f'{data.te1:0.2f}'
         output[topic_base + _mqtt_d['l2']['topic']] = f'{data.te2:0.2f}'
