@@ -78,9 +78,6 @@ async def periodic_get_data(interval: float):
                     # reset power data to 0 if we got no data 5 times in a row
                     # this is needed to avoid that the last power data is used forever but power is actually 0
                     last_data.p1 = last_data.p2 = 0
-                    if now.hour == 0 and now.minute == 0:
-                        # if we are at midnight, reset energy data
-                        last_data.e1 = last_data.e2 = 0
                     _logger.debug("No data received for 5 times in a row, using last data: %s", last_data)
                     _mqtt.publish_data(last_data)
 
