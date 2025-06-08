@@ -13,9 +13,9 @@ from asyncio import TaskGroup
 from datetime import datetime, timedelta
 from typing import Optional
 
-from APsystemsEZ1 import ReturnDeviceInfo
+from APsystemsEZ1 import ReturnDeviceInfo, ReturnOutputData
 from apsystems_ez1_mqtt.config import Config
-from apsystems_ez1_mqtt.ecu import ECU, OutputData
+from apsystems_ez1_mqtt.ecu import ECU
 from apsystems_ez1_mqtt.mqtthandler import MQTTHandler
 
 _ecu: ECU
@@ -57,7 +57,7 @@ async def periodic_wakeup():
 
 async def periodic_get_data(interval: float):
     """Periodic get output data from ecu"""
-    last_data: Optional[OutputData] = None
+    last_data: Optional[ReturnOutputData] = None
     exception_count = 0
     _logger.debug("Start periodic_get_data with interval: %0.2fs", interval)
     while True:
@@ -68,7 +68,7 @@ async def periodic_get_data(interval: float):
         else:
             sleeptime = interval
             try:
-                ecu_data = await _ecu.get_output_data_ext()
+                ecu_data = await _ecu.get_output_data()
                 _mqtt.publish_data(ecu_data)
                 last_data = ecu_data
                 exception_count = 0
@@ -152,7 +152,7 @@ async def main():
         conf.mqtt_config.hass_device_id = ecu_info.deviceId
     _mqtt = MQTTHandler(lambda status: _loop.call_soon_threadsafe(asyncio.create_task, async_on_status_power(status)),
                         lambda value: _loop.call_soon_threadsafe(asyncio.create_task, async_on_max_power(value)),
-                        conf.mqtt_config, retain = not args.debug)
+                        conf.mqtt_config, retain = not args.debug, tzinfo = _ecu.city.tzinfo)
     _mqtt.connect_mqtt()
 
     # if -r is passed remove all retained topics and exit
@@ -161,7 +161,7 @@ async def main():
         sys.exit(0)
 
     _mqtt.hass_init(conf.ecu_config, ecu_info) # must init before homa_init
-    _mqtt.homa_init(ecu_info, _ecu.city.tzinfo)
+    _mqtt.homa_init(ecu_info)
 
     _logger.info("Starting all periodic tasks. Press <Ctrl>-C to terminate.")
     try:
