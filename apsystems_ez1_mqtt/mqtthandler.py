@@ -28,9 +28,12 @@ _mqtt_d = {
     'pt': {'topic': 'Power',              'type': 'text',   'room': 'Home', 'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p1': {'topic': 'Power P1',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
     'p2': {'topic': 'Power P2',           'type': 'text',   'room': '',     'unit': ' W',   'comp': 'sensor', 'class': 'power'},
-    'et': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
-    'e1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
-    'e2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'et': {'topic': 'Energy start',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e1': {'topic': 'Energy start P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'e2': {'topic': 'Energy start P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'dt': {'topic': 'Energy today',       'type': 'text',   'room': 'Home', 'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'd1': {'topic': 'Energy today P1',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
+    'd2': {'topic': 'Energy today P2',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'lt': {'topic': 'Energy lifetime',    'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l1': {'topic': 'Energy lifetime P1', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
     'l2': {'topic': 'Energy lifetime P2', 'type': 'text',   'room': '',     'unit': ' kWh', 'comp': 'sensor', 'class': '_energy_increasing'},
@@ -46,13 +49,17 @@ _mqtt_d = {
 class MQTTHandler:
     """Handle MQTT connection to broker and publish message"""
 
-    def __init__(self, trigger_on_status_power, trigger_async_on_max_power, mqtt_config: MQTTConfig, *, qos: int = 1, retain = False):
+    def __init__(self, trigger_on_status_power, trigger_async_on_max_power, mqtt_config: MQTTConfig, *, qos: int = 1, retain = False, tzinfo = None):
         self.mqtt_config = mqtt_config
         self.qos = qos
         self.retain = retain
         self.trigger_async_on_status_power = trigger_on_status_power
         self.trigger_async_on_max_power = trigger_async_on_max_power
         self.client = None
+        self.tzinfo = tzinfo
+        self.day_start_date = None
+        self.te1_day_start = 0.0
+        self.te2_day_start = 0.0
 
 
     def on_connect(self, client, userdata, flags, rc):
@@ -202,7 +209,7 @@ class MQTTHandler:
                           "1" if status else "0", self.qos, self.retain)
 
 
-    def publish_data(self, data):
+    def publish_data(self, data: ReturnOutputData | None):
         """Publish ECU data to MQTT"""
         _LOGGER.debug("Start MQTT publish")
         self._check_mqtt_connected()
@@ -218,6 +225,17 @@ class MQTTHandler:
         Parse data from APsystemsEZ1 ReturnOutputData
         The data include power output status ('p1', 'p2'), energy readings ('e1', 'e2'), and total energy ('te1', 'te2')
         """
+        # Check if we are at the start of a new day
+        now = datetime.now(self.tzinfo)
+        if now.date() != self.day_start_date:
+            self.day_start_date = now.date()
+            # Reset daily energy of inverter outputs
+            self.te1_day_start = data.te1
+            self.te2_day_start = data.te2
+        # Calculate daily energy of inverter outputs
+        d1=data.te1 - self.te1_day_start
+        d2=data.te2 - self.te2_day_start
+
         output = {}
         topic_base = self._get_topic_base()
         output[topic_base + _mqtt_d['pt']['topic']] = f'{(data.p1 + data.p2):0.0f}'
@@ -226,13 +244,16 @@ class MQTTHandler:
         output[topic_base + _mqtt_d['et']['topic']] = f'{(data.e1 + data.e2):0.3f}'
         output[topic_base + _mqtt_d['e1']['topic']] = f'{data.e1:0.3f}'
         output[topic_base + _mqtt_d['e2']['topic']] = f'{data.e2:0.3f}'
+        output[topic_base + _mqtt_d['dt']['topic']] = f'{(d1 + d2):0.3f}'
+        output[topic_base + _mqtt_d['d1']['topic']] = f'{d1:0.3f}'
+        output[topic_base + _mqtt_d['d2']['topic']] = f'{d2:0.3f}'
         output[topic_base + _mqtt_d['lt']['topic']] = f'{(data.te1 + data.te2):0.2f}'
         output[topic_base + _mqtt_d['l1']['topic']] = f'{data.te1:0.2f}'
         output[topic_base + _mqtt_d['l2']['topic']] = f'{data.te2:0.2f}'
         return output
 
 
-    def homa_init(self, ecu_info: ReturnDeviceInfo, tz):
+    def homa_init(self, ecu_info: ReturnDeviceInfo):
         """Publish HomA init messages to MQTT"""
         _LOGGER.debug("Start homa_init")
 
@@ -255,7 +276,7 @@ class MQTTHandler:
         self._publish(self.client, topic_base + _mqtt_d['id']['topic'], ecu_info.deviceId, self.qos, self.retain)
         self._publish(self.client, topic_base + _mqtt_d['ip']['topic'], ecu_info.ipAddr, self.qos, self.retain)
         self._publish(self.client, topic_base + _mqtt_d['ve']['topic'], ecu_info.devVer, self.qos, self.retain)
-        self._publish(self.client, topic_base + _mqtt_d['ti']['topic'], datetime.now(tz).isoformat(timespec='seconds'), self.qos, self.retain)
+        self._publish(self.client, topic_base + _mqtt_d['ti']['topic'], datetime.now(self.tzinfo).isoformat(timespec='seconds'), self.qos, self.retain)
         self._publish(self.client, topic_base + _mqtt_d['wi']['topic'], "online", self.qos, self.retain) # last will as long as connected
 
         topic_base = topic_base.replace("/controls/", "/meta/")
