@@ -2,21 +2,28 @@
 [![Release badge](https://img.shields.io/github/v/release/hmueller01/APsystems-EZ1-mqtt)](https://github.com/hmueller01/APsystems-EZ1-mqtt/releases)
 [![Pylint](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml/badge.svg??event=push)](https://github.com/hmueller01/APsystems-EZ1-mqtt/actions/workflows/pylint.yml)
 
+# This project has been archived
+
+This project was migrated to a Home Assistant add-on: https://github.com/hass-hmueller01/addon-apsystems-ez1-homa
+
+Developent is stopped here.
+
 # APsystems EZ1 MQTT gateway <!-- omit from toc -->
 
 This component is a Python package to gateway [APsystems](https://apsystems.com/) EZ1 inverter local API to MQTT, [HomA](https://github.com/binarybucks/homA) and [Home Assistant](https://www.home-assistant.io).
 
-- [Acknowledgements](#acknowledgements)
-- [Basic Requirements](#basic-requirements)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-	- [Run as a service](#run-as-a-service)
-- [Configuration](#configuration)
-	- [ECU](#ecu)
-	- [MQTT](#mqtt)
-	- [Timezone](#timezone)
-- [MQTT topics](#mqtt-topics)
-- [Changelog](#changelog)
+- [This project has been archived](#this-project-has-been-archived)
+	- [Acknowledgements](#acknowledgements)
+	- [Basic Requirements](#basic-requirements)
+	- [Prerequisites](#prerequisites)
+	- [Installation](#installation)
+		- [Run as a service](#run-as-a-service)
+	- [Configuration](#configuration)
+		- [ECU](#ecu)
+		- [MQTT](#mqtt)
+		- [Timezone](#timezone)
+	- [MQTT topics](#mqtt-topics)
+	- [Changelog](#changelog)
 
 
 ## Acknowledgements
